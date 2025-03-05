@@ -1,10 +1,8 @@
 // ui/GridRenderer.ts - Handles the visual rendering of the game grid
 import { Game } from '../core/Game';
-import { Position } from '../types/Position';
-import { TerrainType } from '../types/TerrainType';
-import { Entity } from '../entities/Entity';
-import { Faction } from '../types/Faction';
-import { VisibilityState } from '../systems/FogOfWar';
+import { Position, TerrainType, Faction } from '../types';
+import { Entity } from '../entities';
+import { VisibilityState, FogOfWar } from '../systems';
 
 export class GridRenderer {
     private game: Game;
@@ -94,44 +92,61 @@ export class GridRenderer {
         const x = position.x * this.tileSize;
         const y = position.y * this.tileSize;
         
-        // Skip rendering unexplored tiles
         if (visibility === 'unexplored') {
+            // Render unexplored as dark tile
             this.ctx.fillStyle = '#000';
             this.ctx.fillRect(x, y, this.tileSize, this.tileSize);
             return;
         }
-        
-        // Set color based on terrain type
-        let color = '#888'; // Default gray
+
+        // Get base color for terrain type
+        let color = '#6ab04c'; // Default grass color
         
         switch (terrainType) {
             case TerrainType.GRASS:
-                color = '#7CFC00';
+                color = '#6ab04c';
                 break;
             case TerrainType.DIRT:
-                color = '#8B4513';
+                color = '#795548';
                 break;
             case TerrainType.STONE:
-                color = '#A9A9A9';
+                color = '#aaa9ad';
                 break;
             case TerrainType.WATER:
-                color = '#1E90FF';
+                color = '#2980b9';
                 break;
         }
         
-        // Draw tile
-        this.ctx.fillStyle = color;
+        // Apply visibility effects
+        if (visibility === 'explored') {
+            // Darken the color for explored but not visible tiles
+            this.ctx.fillStyle = this.darkenColor(color, 0.6);
+        } else {
+            // Use normal color for visible tiles
+            this.ctx.fillStyle = color;
+        }
+        
         this.ctx.fillRect(x, y, this.tileSize, this.tileSize);
         
-        // Draw border
-        this.ctx.strokeStyle = '#333';
+        // Draw grid lines
+        this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
         this.ctx.strokeRect(x, y, this.tileSize, this.tileSize);
+    }
+    
+    // Helper method to darken a color
+    private darkenColor(color: string, factor: number): string {
+        // Convert hex to RGB
+        let r = parseInt(color.substring(1, 3), 16);
+        let g = parseInt(color.substring(3, 5), 16);
+        let b = parseInt(color.substring(5, 7), 16);
         
-        // Apply fog of war for explored but not visible tiles
-        if (visibility === 'explored') {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(x, y, this.tileSize, this.tileSize);
-        }
+        // Darken by factor
+        r = Math.round(r * factor);
+        g = Math.round(g * factor);
+        b = Math.round(b * factor);
+        
+        // Convert back to hex
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
     }
     
     private renderEntity(entity: Entity, visibility: 'visible' | 'explored' | 'unexplored'): void {

@@ -1,12 +1,9 @@
 // core/Game.ts - Main game controller
 import { Grid } from './Grid';
-import { ResourceManager } from '../systems/ResourceManager';
-import { EntityManager } from '../systems/EntityManager';
-import { CombatSystem } from '../systems/CombatSystem';
-import { FogOfWar } from '../systems/FogOfWar';
-import { Entity } from '../entities/Entity';
-import { Position } from '../types/Position';
-import { Faction } from '../types/Faction';
+import { ResourceManager, EntityManager, CombatSystem, FogOfWar } from '../systems';
+import { Entity } from '../entities';
+import { Hero } from '../entities/Hero';
+import { Position, Faction, EntityType } from '../types';
 
 export class Game {
   private grid: Grid;
@@ -17,6 +14,7 @@ export class Game {
   private entityManager: EntityManager;
   private combatSystem: CombatSystem;
   private fogOfWar: FogOfWar;
+  private selectedEntity: Entity | null = null;
   
   constructor(width: number, height: number) {
     this.grid = new Grid(width, height);
@@ -44,8 +42,14 @@ export class Game {
   }
   
   private createPlayerHero(position: Position): void {
-    // Create a hero entity and add to entity manager
-    // Implementation would depend on Hero class
+    // Create a hero using our concrete Hero class
+    const hero = new Hero(position);
+    
+    // Add the hero to the entity manager
+    this.entityManager.addEntity(hero);
+    this.selectedEntity = hero; // Select the hero by default
+    
+    console.log(`Hero created at position (${position.x}, ${position.y})`);
   }
   
   public nextTurn(): void {
@@ -112,10 +116,21 @@ export class Game {
   private updateFogOfWar(): void {
     // Update visible tiles based on player entities
     const playerEntities = this.entityManager.getEntitiesByFaction(Faction.PLAYER);
-    this.fogOfWar.reset();
     
-    for (const entity of playerEntities) {
-      this.fogOfWar.revealArea(entity.position, entity.sightRange);
+    // On first update, reveal a larger initial area
+    if (this.turnCount === 0) {
+      console.log("Initial fog of war setup");
+      const startingPosition = this.grid.getStartingPosition();
+      this.fogOfWar.revealInitialArea(startingPosition);
+    } else {
+      // Regular update - reset and reveal based on entities
+      console.log(`Updating fog of war on turn ${this.turnCount}`);
+      this.fogOfWar.reset();
+      
+      for (const entity of playerEntities) {
+        console.log(`Revealing area around ${entity.getName()} at (${entity.position.x},${entity.position.y}) with sight range ${entity.sightRange}`);
+        this.fogOfWar.revealArea(entity.position, entity.sightRange);
+      }
     }
   }
   

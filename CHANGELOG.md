@@ -1,33 +1,37 @@
 # Changelog
 
-## Current Implementation Status (as of March 5, 2024)
+## Current Implementation Status (as of March 19, 2024)
 
 ### Core Systems
-- **Grid System**: Implemented with terrain generation, tile properties, and improved utility methods
-- **Entity Framework**: Base Entity class with combat and resource gathering capabilities
+- **Grid System**: Implemented with enhanced terrain generation, coherent water bodies, forest biomes, and improved world generation algorithms
+- **Entity Framework**: Base Entity class with combat and resource gathering capabilities, including concrete Hero implementation
 - **Turn-Based System**: Day/night cycle with player and enemy turns
 - **Combat System**: XCOM-style probability combat with line of sight, range, and damage calculations
-- **Resource Management**: Resource collection and usage, with harvesting mechanics
+- **Resource Management**: Resource collection and usage, with harvesting mechanics and forest clusters
 - **Fog of War**: Vision system based on entity sight range, with improved visibility states
 - **Development Environment**: Project setup with TypeScript, webpack, and npm scripts for easy development
 
 ### UI Components
-- **GridRenderer**: Basic implementation for rendering the game grid and entities
+- **GridRenderer**: Comprehensive implementation for rendering the game grid, entities, and visibility states
 - **UIManager**: Framework for managing game UI elements and interactions
 - **CombatUI**: Interface for displaying combat information and attack options
 
 ### Recent Improvements
-- Fixed file and module structure for better organization
-- Added entity position and selection methods
-- Implemented proper resource management with grid integration
-- Created development environment with webpack and npm scripts
+- **Enhanced Terrain Generation**: Implemented a multi-stage terrain generation algorithm that creates:
+  - Natural-looking water bodies (lakes and rivers) covering 20-40% of the map
+  - Forest biomes with clustered trees as harvestable wood resources
+  - Better distribution of resources across the map
+- Fixed module resolution issues with proper index files for cleaner imports
+- Improved code organization with better file structure
+- Added concrete Hero entity implementation
+- Enhanced fog of war and visibility system
+- Fixed entity creation and instantiation issues
 - Added detailed setup instructions for developers
-- Fixed import paths and module resolution
 
 ## What's Missing
 
 ### Specific Entity Implementations:
-- No concrete Hero, Worker, or enemy (Zombie, Skeleton, etc.) classes yet
+- No Worker or enemy (Zombie, Skeleton, etc.) classes yet
 - No Building implementations
 
 ### Enemy AI:
@@ -54,12 +58,13 @@
 
 Based on the game concept and current implementation, here's what should be prioritized next:
 
-### 1. Fix Remaining Module Resolution Issues
-- Resolve remaining TypeScript import errors
-- Ensure all components can properly interact with each other
+### 1. Complete Hero Functionality
+- Add ability for Hero to gather resources
+- Implement better movement and action visualization
+- Add hero stats and progression
 
-### 2. Complete Entity Implementations
-- Create specific entity classes for Hero, Worker, Buildings, and enemy types
+### 2. Complete Other Entity Implementations
+- Create specific entity classes for Worker, Buildings, and enemy types
 - Define unique attributes and abilities for each entity type
 - Implement building placement and construction
 
@@ -70,7 +75,6 @@ Based on the game concept and current implementation, here's what should be prio
 
 ### 4. Expand Resource System
 - Complete resource gathering mechanics
-- Create resource nodes on the grid
 - Add resource depletion and regeneration
 
 ### 5. Build the Complete Game UI
