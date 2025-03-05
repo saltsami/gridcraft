@@ -46,8 +46,13 @@ export class Movement {
 
     if (entity) {
       console.log(`[Movement] Entity has ${entity.actionPoints}/${entity.maxActionPoints} action points`);
-      this.calculateReachableTiles(entity);
-      console.log(`[Movement] Calculated ${this.reachableTiles.size} reachable tiles`);
+      // Make sure entity has action points before calculating reachable tiles
+      if (entity.actionPoints > 0) {
+        this.calculateReachableTiles(entity);
+        console.log(`[Movement] Calculated ${this.reachableTiles.size} reachable tiles`);
+      } else {
+        console.log(`[Movement] Entity has no action points, skipping reachable tile calculation`);
+      }
     }
   }
 
@@ -59,6 +64,10 @@ export class Movement {
     const queue: ReachableTile[] = [{ position: { ...entity.position }, cost: 0 }];
     const visited: Set<string> = new Set();
     this.reachableTiles.clear();
+
+    // Always add the entity's current position as reachable with 0 cost
+    const startPosKey = `${entity.position.x},${entity.position.y}`;
+    this.reachableTiles.set(startPosKey, { position: { ...entity.position }, cost: 0 });
 
     while (queue.length > 0) {
       const current = queue.shift()!;

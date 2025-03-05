@@ -1,21 +1,21 @@
 # Changelog
 
-## Current Implementation Status (as of March 19, 2024)
+## Current Implementation Status (as of April 2024)
 
 ### Core Systems
 - **Grid System**: Implemented with enhanced terrain generation, coherent water bodies, forest biomes, and improved world generation algorithms
 - **Entity Framework**: Base Entity class with combat and resource gathering capabilities, including concrete Hero implementation
 - **Turn-Based System**: Day/night cycle with player and enemy turns
-- **Combat System**: XCOM-style probability combat with line of sight, range, and damage calculations
+- **Combat System**: XCOM-style probability combat with line of sight, range, and damage calculations with improved hit chances
 - **Resource Management**: Resource collection and usage, with harvesting mechanics and forest clusters
 - **Fog of War**: Vision system based on entity sight range, with improved visibility states
 - **Development Environment**: Project setup with TypeScript, webpack, and npm scripts for easy development
-- **Enemy System**: Implemented multiple enemy types with unique stats and behaviors
+- **Enemy System**: Implemented multiple enemy types with unique stats, behaviors, and improved AI strategies
 
 ### UI Components
 - **GridRenderer**: Comprehensive implementation for rendering the game grid, entities, and visibility states
 - **UIManager**: Framework for managing game UI elements and interactions
-- **CombatUI**: Interface for displaying combat information and attack options
+- **CombatUI**: Fully functional combat interface with attack buttons and hit/miss feedback
 
 ### Recent Improvements
 - **Enhanced Terrain Generation**: Implemented a multi-stage terrain generation algorithm that creates:
@@ -28,15 +28,28 @@
 - Enhanced fog of war and visibility system
 - Fixed entity creation and instantiation issues
 - Added detailed setup instructions for developers
-- **Added Enemy Mobs**: Implemented four unique enemy types:
-  - Zombie: Melee-focused enemy with high health and armor
-  - Skeleton: Ranged attacker with high accuracy but lower health
-  - Spider: Fast-moving enemy with high evasion and more action points
+- **Enhanced Enemy Mobs**: Implemented four unique enemy types with distinctive behaviors:
+  - Zombie: Melee-focused enemy that relentlessly chases the player
+  - Skeleton: Ranged attacker that maintains distance and retreats when threatened
+  - Spider: Fast-moving enemy that attempts to flank the player
   - Creeper: Explosive enemy with powerful area-of-effect attacks
-- **Basic Enemy AI**: Implemented a simple AI system for enemies that:
-  - Targets and moves toward the nearest player entity
-  - Uses appropriate attack types (melee, ranged, or special) based on distance
-  - Manages action points to balance movement and attacks
+- **Advanced Enemy AI**: Implemented a sophisticated AI system that:
+  - Uses unique movement and attack strategies for each enemy type
+  - Employs tactical flanking and positioning
+  - Dynamically adjusts aggression based on health and distance
+  - Manages action points efficiently for movement and attacks
+- **Robust Combat System**:
+  - Balance improvements for more engaging combat
+  - Fixed hit chance calculations for more reliable attacks
+  - Enhanced damage calculation with proper armor effectiveness
+  - Visual feedback for successful attacks and kills
+  - Rebalanced entity stats for better gameplay experience
+- **UI Improvements**:
+  - Enhanced combat panel with clearly visible attack buttons
+  - Keyboard shortcuts for common actions (End Turn)
+  - Wider tooltips for better readability
+  - Visual highlighting for selected entities
+  - Better visibility of critical game information
 
 ## What's Missing
 
@@ -45,7 +58,6 @@
 - No Building implementations
 
 ### Enemy AI Improvements:
-- Basic AI implemented, but requires more sophisticated pathfinding
 - No group coordination or tactical decision making
 - Special attacks are defined but not fully implemented
 
@@ -60,7 +72,6 @@
 - No crafting or technology progression
 
 ### Game UI:
-- Basic rendering exists but needs complete implementation
 - No building or technology UI
 
 ### Win/Loss Conditions:
@@ -81,20 +92,18 @@ Based on the game concept and current implementation, here's what should be prio
 - Implement building placement and construction
 
 ### 3. Enhance Enemy AI
-- Improve pathfinding for enemies to target player structures
-- Create more sophisticated behavior patterns for different enemy types
-- Balance enemy difficulty based on the day/night cycle progression
+- Implement group coordination between enemies
+- Create more challenging behaviors for night phases
+- Further balance enemy difficulty based on the day/night cycle progression
 
 ### 4. Expand Resource System
 - Complete resource gathering mechanics
 - Add resource depletion and regeneration
 
 ### 5. Build the Complete Game UI
-- Finish the Grid visualization
-- Improve entity information and selection
-- Complete resource display
 - Add building and crafting menus
-- Enhance turn information and controls
+- Implement tech tree visualization
+- Add in-game tutorial elements
 
 ### 6. Implement Technology Progression
 - Design a crafting and technology tree

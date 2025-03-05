@@ -136,35 +136,14 @@ export class UIManager {
     }
 
     private createCombatActionPanel(): void {
-        // Create and add the combat action panel if it doesn't exist
-        let actionPanel = document.getElementById('combat-actions');
+        // Use the existing combat action panel instead of creating a new one
+        const actionPanel = document.getElementById('combat-actions');
         if (!actionPanel) {
-            actionPanel = document.createElement('div');
-            actionPanel.id = 'combat-actions';
-            actionPanel.className = 'combat-actions-panel';
-            actionPanel.style.display = 'none';
-            
-            // Style the panel
-            actionPanel.style.position = 'absolute';
-            actionPanel.style.left = '10px';
-            actionPanel.style.bottom = '120px';
-            actionPanel.style.backgroundColor = 'rgba(30, 30, 30, 0.9)';
-            actionPanel.style.border = '2px solid #444';
-            actionPanel.style.borderRadius = '5px';
-            actionPanel.style.padding = '8px 12px';
-            actionPanel.style.zIndex = '1000';
-            actionPanel.style.minWidth = '200px';
-            actionPanel.style.color = 'white';
-            actionPanel.style.pointerEvents = 'auto'; // Make sure panel is clickable
-            
-            // Add to the UI overlay instead of game container
-            const uiOverlay = document.getElementById('ui-overlay');
-            if (uiOverlay) {
-                uiOverlay.appendChild(actionPanel);
-            } else {
-                document.body.appendChild(actionPanel);
-            }
+            console.error('[UIManager] Combat actions panel not found in the HTML');
+            return;
         }
+        
+        console.log('[UIManager] Combat actions panel found in HTML');
     }
     
     public update(): void {
@@ -199,7 +178,17 @@ export class UIManager {
             const turnCount = this.game.getTurnCount();
             const isDayPhase = this.game.isDayPhase();
             
+            // Update the text to clearly show day/night phase
             this.turnInfoElement.textContent = `${isDayPhase ? 'Day' : 'Night'} ${Math.floor(turnCount / 2) + 1}`;
+            
+            // Update the visual style based on day/night
+            if (isDayPhase) {
+                this.turnInfoElement.style.color = '#ffcc00'; // Bright yellow for day
+                this.turnInfoElement.style.textShadow = '0 0 5px rgba(255, 204, 0, 0.5)';
+            } else {
+                this.turnInfoElement.style.color = '#6699ff'; // Blue for night
+                this.turnInfoElement.style.textShadow = '0 0 5px rgba(102, 153, 255, 0.5)';
+            }
         }
     }
     
@@ -309,25 +298,28 @@ export class UIManager {
                 attackButton.className = 'attack-button';
                 attackButton.textContent = `Attack ${this.targetEntity.getName()} (${this.getAttackTypeName(attackType)})`;
                 
-                // Style the button
-                attackButton.style.backgroundColor = '#b71c1c';
-                attackButton.style.color = 'white';
+                // Make the button more visible and clickable
                 attackButton.style.padding = '10px 20px';
-                attackButton.style.margin = '5px';
+                attackButton.style.backgroundColor = '#ff4d4d';
+                attackButton.style.color = 'white';
+                attackButton.style.border = '2px solid #cc0000';
+                attackButton.style.borderRadius = '5px';
                 attackButton.style.fontSize = '16px';
+                attackButton.style.fontWeight = 'bold';
                 attackButton.style.cursor = 'pointer';
-                attackButton.style.border = 'none';
-                attackButton.style.borderRadius = '4px';
-                attackButton.style.width = '100%';
-                attackButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                attackButton.style.pointerEvents = 'auto';
+                attackButton.style.margin = '10px 0';
+                attackButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
                 
                 // Store references to entities to ensure they exist when clicked
                 const currentAttacker = this.selectedEntity;
                 const currentTarget = this.targetEntity;
+                const currentAttackType = attackType; // Store attack type to ensure it's not null
                 
-                // Add click handler for attack using addEventListener instead of onclick
-                attackButton.addEventListener('click', (e: MouseEvent) => {
+                // Create a reference to 'this' that can be used inside the function
+                const self = this;
+                
+                // Use a traditional function to maintain 'this' context
+                function handleClick(e: MouseEvent) {
                     console.log('[UIManager] Attack button clicked');
                     e.preventDefault();
                     e.stopPropagation();
@@ -338,15 +330,19 @@ export class UIManager {
                     }
                     
                     console.log(`[UIManager] Executing attack from ${currentAttacker.getName()} to ${currentTarget.getName()}`);
-                    this.executeAttack(currentAttacker, currentTarget, attackType);
-                });
+                    // Use the captured 'self' reference instead of 'this'
+                    self.executeAttack(currentAttacker, currentTarget, currentAttackType);
+                }
                 
+                // Add click event listener
+                attackButton.addEventListener('click', handleClick, true);
+                
+                // Append the button to the panel
                 actionPanel.appendChild(attackButton);
                 
                 // Ensure the panel is visible and clickable
                 actionPanel.style.display = 'block';
-                actionPanel.style.zIndex = '1000';
-                actionPanel.style.pointerEvents = 'auto';
+                actionPanel.style.zIndex = '1000'; // Ensure it's above other elements
                 
                 console.log('[UIManager] Combat panel and attack button created');
             } else {

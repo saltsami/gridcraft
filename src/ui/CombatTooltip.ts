@@ -48,12 +48,31 @@ export class CombatTooltip {
         // Get attack type name for display
         const attackTypeName = this.getAttackTypeName(attackType);
         
+        // Round all percentage values to integers
+        const hitChance = Math.round(combatOdds.hitChance);
+        const criticalChance = Math.round(combatOdds.criticalChance);
+        const grazeChance = Math.round(combatOdds.grazeChance);
+        const missChance = Math.round(combatOdds.missChance);
+        const killChance = Math.round(combatOdds.killChance);
+        
+        // Round damage values to integers
+        const minDamage = Math.round(combatOdds.minDamage);
+        const maxDamage = Math.round(combatOdds.maxDamage);
+        const avgDamage = Math.round(combatOdds.avgDamage * 10) / 10; // Keep one decimal place
+        
+        // Round modifiers to integers
+        const baseChance = Math.round(combatOdds.modifiers.baseChance);
+        const accuracyMod = Math.round(combatOdds.modifiers.accuracyMod);
+        const evasionMod = Math.round(combatOdds.modifiers.evasionMod);
+        const distanceMod = Math.round(combatOdds.modifiers.distanceMod);
+        const coverMod = Math.round(combatOdds.modifiers.coverMod);
+        
         // Create a visual representation of hit chance
         const hitChanceBar = this.createProbabilityBar(
-            combatOdds.criticalChance,
-            combatOdds.hitChance - combatOdds.criticalChance - combatOdds.grazeChance,
-            combatOdds.grazeChance,
-            combatOdds.missChance
+            criticalChance,
+            hitChance - criticalChance - grazeChance,
+            grazeChance,
+            missChance
         );
         
         let content = `
@@ -67,28 +86,28 @@ export class CombatTooltip {
                 <div class="tooltip-section">
                     <div class="tooltip-row">
                         <span class="tooltip-label">Hit Chance:</span>
-                        <span class="tooltip-value">${combatOdds.hitChance}%</span>
+                        <span class="tooltip-value">${hitChance}%</span>
                     </div>
                     <div class="tooltip-row probability-bar-container">
                         ${hitChanceBar}
                     </div>
                     <div class="tooltip-row tooltip-breakdown">
-                        <span class="crit-marker">Crit: ${combatOdds.criticalChance}%</span>
-                        <span class="hit-marker">Hit: ${combatOdds.hitChance - combatOdds.criticalChance - combatOdds.grazeChance}%</span>
-                        <span class="graze-marker">Graze: ${combatOdds.grazeChance}%</span>
+                        <span class="crit-marker">Crit: ${criticalChance}%</span>
+                        <span class="hit-marker">Hit: ${hitChance - criticalChance - grazeChance}%</span>
+                        <span class="graze-marker">Graze: ${grazeChance}%</span>
                     </div>
                     
                     <div class="tooltip-row">
                         <span class="tooltip-label">Damage:</span>
-                        <span class="tooltip-value">${combatOdds.minDamage}-${combatOdds.maxDamage}</span>
+                        <span class="tooltip-value">${minDamage}-${maxDamage}</span>
                     </div>
                     <div class="tooltip-row">
                         <span class="tooltip-label">Expected Damage:</span>
-                        <span class="tooltip-value">${Math.round(combatOdds.avgDamage * 10) / 10}</span>
+                        <span class="tooltip-value">${avgDamage}</span>
                     </div>
                     <div class="tooltip-row">
                         <span class="tooltip-label">Kill Chance:</span>
-                        <span class="tooltip-value">${combatOdds.killChance}%</span>
+                        <span class="tooltip-value">${killChance}%</span>
                     </div>
                 </div>
                 
@@ -96,26 +115,26 @@ export class CombatTooltip {
                     <div class="tooltip-subheader">Hit Chance Modifiers:</div>
                     <div class="tooltip-row">
                         <span class="tooltip-label">Base Chance:</span>
-                        <span class="tooltip-value">${combatOdds.modifiers.baseChance}%</span>
+                        <span class="tooltip-value">${baseChance}%</span>
                     </div>
                     <div class="tooltip-row">
                         <span class="tooltip-label">Accuracy:</span>
-                        <span class="tooltip-value ${combatOdds.modifiers.accuracyMod >= 0 ? 'positive' : 'negative'}">${combatOdds.modifiers.accuracyMod >= 0 ? '+' : ''}${combatOdds.modifiers.accuracyMod}%</span>
+                        <span class="tooltip-value ${accuracyMod >= 0 ? 'positive' : 'negative'}">${accuracyMod >= 0 ? '+' : ''}${accuracyMod}%</span>
                     </div>
                     <div class="tooltip-row">
                         <span class="tooltip-label">Target Evasion:</span>
-                        <span class="tooltip-value ${combatOdds.modifiers.evasionMod >= 0 ? 'positive' : 'negative'}">${combatOdds.modifiers.evasionMod >= 0 ? '+' : ''}${combatOdds.modifiers.evasionMod}%</span>
+                        <span class="tooltip-value ${evasionMod >= 0 ? 'positive' : 'negative'}">${evasionMod >= 0 ? '+' : ''}${evasionMod}%</span>
                     </div>
-                    ${combatOdds.modifiers.distanceMod !== 0 ? `
+                    ${distanceMod !== 0 ? `
                     <div class="tooltip-row">
                         <span class="tooltip-label">Distance:</span>
-                        <span class="tooltip-value ${combatOdds.modifiers.distanceMod >= 0 ? 'positive' : 'negative'}">${combatOdds.modifiers.distanceMod >= 0 ? '+' : ''}${combatOdds.modifiers.distanceMod}%</span>
+                        <span class="tooltip-value ${distanceMod >= 0 ? 'positive' : 'negative'}">${distanceMod >= 0 ? '+' : ''}${distanceMod}%</span>
                     </div>
                     ` : ''}
-                    ${combatOdds.modifiers.coverMod !== 0 ? `
+                    ${coverMod !== 0 ? `
                     <div class="tooltip-row">
                         <span class="tooltip-label">Cover:</span>
-                        <span class="tooltip-value ${combatOdds.modifiers.coverMod >= 0 ? 'positive' : 'negative'}">${combatOdds.modifiers.coverMod >= 0 ? '+' : ''}${combatOdds.modifiers.coverMod}%</span>
+                        <span class="tooltip-value ${coverMod >= 0 ? 'positive' : 'negative'}">${coverMod >= 0 ? '+' : ''}${coverMod}%</span>
                     </div>
                     ` : ''}
                 </div>
@@ -127,6 +146,12 @@ export class CombatTooltip {
     
     // Simplified version for quick display of combat odds
     static showCombatOdds(odds: CombatOdds, x: number, y: number): void {
+        // Round values for display
+        const hitChance = Math.round(odds.hitChance);
+        const minDamage = Math.round(odds.minDamage);
+        const maxDamage = Math.round(odds.maxDamage);
+        const avgDamage = Math.round(odds.avgDamage * 10) / 10; // Keep one decimal place
+        
         // Create a simplified combat preview
         let content = `
             <div class="tooltip combat-hover-tooltip">
@@ -134,15 +159,15 @@ export class CombatTooltip {
                 <div class="tooltip-section">
                     <div class="tooltip-row">
                         <span class="tooltip-label">Hit Chance:</span>
-                        <span class="tooltip-value">${odds.hitChance}%</span>
+                        <span class="tooltip-value">${hitChance}%</span>
                     </div>
                     <div class="tooltip-row">
                         <span class="tooltip-label">Damage:</span>
-                        <span class="tooltip-value">${odds.minDamage}-${odds.maxDamage}</span>
+                        <span class="tooltip-value">${minDamage}-${maxDamage}</span>
                     </div>
                     <div class="tooltip-row">
                         <span class="tooltip-label">Expected Damage:</span>
-                        <span class="tooltip-value">${Math.round(odds.avgDamage * 10) / 10}</span>
+                        <span class="tooltip-value">${avgDamage}</span>
                     </div>
                 </div>
             </div>

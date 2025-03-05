@@ -5,84 +5,302 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GridCraft Defense</title>
     <style>
+        /* Base styles will be loaded from styles.css */
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             font-family: 'Arial', sans-serif;
+            background-color: #222;
+            color: #eee;
         }
+        
         #game-container {
             position: relative;
-            width: 1024px;
-            height: 768px;
-            background-color: #111;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
+        
         #game-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            flex-grow: 1;
+            background-color: #111;
         }
-        #ui-overlay {
+        
+        #ui-container {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 10;
         }
-        #resource-display {
+        
+        #ui-container > * {
+            pointer-events: auto;
+        }
+        
+        #resource-panel {
             position: absolute;
             top: 10px;
             left: 10px;
             background-color: rgba(0, 0, 0, 0.7);
             padding: 10px;
             border-radius: 5px;
-            color: white;
-            pointer-events: auto;
+            border: 1px solid #444;
         }
-        #action-panel {
+        
+        #turn-panel {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
+            top: 10px;
             right: 10px;
-            height: 100px;
             background-color: rgba(0, 0, 0, 0.7);
             padding: 10px;
             border-radius: 5px;
+            border: 1px solid #444;
+            text-align: right;
+        }
+        
+        #selected-entity {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            min-width: 200px;
+        }
+        
+        #combat-actions {
+            position: absolute;
+            bottom: 70px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #666;
+            display: none;
+        }
+        
+        #actions-panel {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+        }
+        
+        .mini-health-bar-container {
+            width: 100px;
+            height: 8px;
+            background-color: #333;
+            border-radius: 4px;
+            margin-top: 2px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .mini-health-bar {
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        .mini-health-bar.good {
+            background-color: #4CAF50;
+        }
+        
+        .mini-health-bar.warning {
+            background-color: #FFC107;
+        }
+        
+        .mini-health-bar.danger {
+            background-color: #F44336;
+        }
+        
+        /* Help panel styles */
+        #help-button {
+            position: absolute;
+            top: 10px;
+            right: 150px;
+            background-color: #2196F3;
             color: white;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: auto;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        
+        #help-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #4CAF50;
+            width: 500px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            z-index: 1001;
+            display: none;
+        }
+        
+        #help-panel h2 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        
+        #help-panel h3 {
+            color: #2196F3;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        
+        #help-panel p {
+            margin: 8px 0;
+        }
+        
+        #help-panel .color-example {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        
+        #help-panel .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #F44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        #help-panel .section {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        
+        #help-panel .section:last-child {
+            border-bottom: none;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
         <canvas id="game-canvas"></canvas>
-        <div id="ui-overlay">
-            <div id="resource-display">
-                <div id="wood">Wood: 0</div>
-                <div id="stone">Stone: 0</div>
-                <div id="iron">Iron: 0</div>
-                <div id="food">Food: 0</div>
+        
+        <div id="ui-container">
+            <!-- Resource Panel -->
+            <div id="resource-panel">
+                <div id="resource-wood">Wood: 0</div>
+                <div id="resource-stone">Stone: 0</div>
+                <div id="resource-iron">Iron: 0</div>
+                <div id="resource-food">Food: 0</div>
             </div>
-            <div id="action-panel">
+            
+            <!-- Turn Information -->
+            <div id="turn-panel">
                 <div id="turn-info">Day 1</div>
-                <div id="actions">
-                    <button id="end-turn">End Turn</button>
+                <button id="end-turn">End Turn</button>
+            </div>
+            
+            <!-- Selected Entity Information -->
+            <div id="selected-entity">No entity selected</div>
+            
+            <!-- Combat Actions -->
+            <div id="combat-actions"></div>
+            
+            <!-- Action Buttons -->
+            <div id="actions-panel">
+                <!-- Buttons will be added dynamically -->
+            </div>
+            
+            <!-- Help Button -->
+            <button id="help-button">?</button>
+            
+            <!-- Help Panel -->
+            <div id="help-panel">
+                <button class="close-button">X</button>
+                <h2>GridCraft Defense - Help</h2>
+                
+                <div class="section">
+                    <h3>Colors</h3>
+                    <p><span class="color-example" style="background-color: #00ff00;"></span> <strong>Green</strong>: Player units</p>
+                    <p><span class="color-example" style="background-color: #ff0000;"></span> <strong>Red</strong>: Enemy units</p>
+                    <p><span class="color-example" style="background-color: #ffff00;"></span> <strong>Yellow</strong>: Neutral units or selection highlight</p>
+                    <p><span class="color-example" style="background-color: #4CAF50;"></span> <strong>Green Health Bar</strong>: High health (>50%)</p>
+                    <p><span class="color-example" style="background-color: #FFC107;"></span> <strong>Yellow Health Bar</strong>: Medium health (25-50%)</p>
+                    <p><span class="color-example" style="background-color: #F44336;"></span> <strong>Red Health Bar</strong>: Low health (<25%)</p>
                 </div>
-                <div id="selected-entity">No entity selected</div>
+                
+                <div class="section">
+                    <h3>Game Terms</h3>
+                    <p><strong>AP</strong>: Action Points - Used for movement and attacks. Each unit has a limited number of AP per turn.</p>
+                    <p><strong>HP</strong>: Health Points - When this reaches zero, the unit is defeated.</p>
+                    <p><strong>Day/Night</strong>: The game cycles between day and night. Enemies spawn during night phases.</p>
+                </div>
+                
+                <div class="section">
+                    <h3>Controls</h3>
+                    <p><strong>Left Click</strong>: Select a unit or move to a highlighted tile</p>
+                    <p><strong>End Turn Button</strong>: Finish your turn and let enemies move</p>
+                    <p><strong>Attack Button</strong>: Appears when you select an enemy while having a unit selected</p>
+                </div>
+                
+                <div class="section">
+                    <h3>Combat</h3>
+                    <p><strong>Melee Attack</strong>: Can only target adjacent tiles</p>
+                    <p><strong>Ranged Attack</strong>: Can target units at a distance</p>
+                    <p><strong>Hit Chance</strong>: Probability of successfully hitting a target</p>
+                    <p><strong>Damage</strong>: Amount of HP removed when an attack hits</p>
+                </div>
             </div>
         </div>
     </div>
+    
+    <script>
+        // Initialize help panel functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const helpButton = document.getElementById('help-button');
+            const helpPanel = document.getElementById('help-panel');
+            const closeButton = helpPanel.querySelector('.close-button');
+            
+            helpButton.addEventListener('click', function() {
+                helpPanel.style.display = 'block';
+            });
+            
+            closeButton.addEventListener('click', function() {
+                helpPanel.style.display = 'none';
+            });
+            
+            // Close help panel when clicking outside of it
+            document.addEventListener('click', function(event) {
+                if (event.target !== helpPanel && 
+                    !helpPanel.contains(event.target) && 
+                    event.target !== helpButton) {
+                    helpPanel.style.display = 'none';
+                }
+            });
+        });
+    </script>
 </body>
 </html> 
