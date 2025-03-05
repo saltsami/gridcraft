@@ -201,6 +201,21 @@ export class GridRenderer {
                 break;
         }
         
+        // Check if this entity is selected
+        const isSelected = this.game.getSelectedEntity() === entity;
+        
+        // Draw tile highlight for selected entity
+        if (isSelected) {
+            // Draw selection indicator underneath the entity
+            this.ctx.fillStyle = 'rgba(255, 204, 0, 0.3)';
+            this.ctx.fillRect(x, y, this.tileSize, this.tileSize);
+            
+            // Draw selection border
+            this.ctx.strokeStyle = '#ffcc00';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeRect(x + 2, y + 2, this.tileSize - 4, this.tileSize - 4);
+        }
+        
         // Draw entity
         this.ctx.fillStyle = color;
         
@@ -212,8 +227,15 @@ export class GridRenderer {
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         this.ctx.fill();
-        this.ctx.strokeStyle = '#000';
-        this.ctx.lineWidth = 1;
+        
+        // Add thicker border for selected entities
+        if (isSelected) {
+            this.ctx.strokeStyle = '#ffcc00';
+            this.ctx.lineWidth = 3;
+        } else {
+            this.ctx.strokeStyle = '#000';
+            this.ctx.lineWidth = 1;
+        }
         this.ctx.stroke();
         
         // Show death effect for dead entities

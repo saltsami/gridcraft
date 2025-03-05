@@ -28,7 +28,7 @@ export class UIManager {
         this.ironElement = document.getElementById('resource-iron');
         this.foodElement = document.getElementById('resource-food');
         this.turnInfoElement = document.getElementById('turn-info');
-        this.selectedEntityElement = document.getElementById('selected-entity-info');
+        this.selectedEntityElement = document.getElementById('selected-entity');
         this.actionsPanelElement = document.getElementById('actions-panel');
         
         // Setup event listeners
@@ -43,18 +43,47 @@ export class UIManager {
     
     private setupEventListeners(): void {
         // Setup end turn button
-        const endTurnButton = document.getElementById('end-turn-button');
+        const endTurnButton = document.getElementById('end-turn');
         if (endTurnButton) {
             console.log('[UIManager] Setting up end turn button');
             endTurnButton.addEventListener('click', () => {
                 console.log('[UIManager] End turn button clicked');
                 this.endTurn();
             });
-        } else {
-            console.log('[UIManager] Creating end turn button');
-            // Create end turn button if it doesn't exist
-            this.createEndTurnButton();
+            
+            // Style the end turn button
+            endTurnButton.style.backgroundColor = '#4CAF50';
+            endTurnButton.style.color = 'white';
+            endTurnButton.style.padding = '12px 24px';
+            endTurnButton.style.fontSize = '18px';
+            endTurnButton.style.fontWeight = 'bold';
+            endTurnButton.style.border = '2px solid #45a049';
+            endTurnButton.style.borderRadius = '6px';
+            endTurnButton.style.cursor = 'pointer';
+            endTurnButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+            endTurnButton.style.transition = 'all 0.2s ease';
+            
+            // Add hover effect
+            endTurnButton.addEventListener('mouseover', () => {
+                endTurnButton.style.backgroundColor = '#45a049';
+                endTurnButton.style.transform = 'translateY(-2px)';
+                endTurnButton.style.boxShadow = '0 6px 12px rgba(0,0,0,0.3)';
+            });
+            
+            endTurnButton.addEventListener('mouseout', () => {
+                endTurnButton.style.backgroundColor = '#4CAF50';
+                endTurnButton.style.transform = 'translateY(0)';
+                endTurnButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+            });
         }
+
+        // Add keyboard shortcut for end turn
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                console.log('[UIManager] Enter key pressed - ending turn');
+                this.endTurn();
+            }
+        });
     }
     
     private createEndTurnButton(): void {
@@ -173,7 +202,7 @@ export class UIManager {
                 const healthBarClass = healthPercent <= 25 ? 'danger' : healthPercent <= 50 ? 'warning' : 'good';
                 
                 this.selectedEntityElement.innerHTML = `
-                    <div>Selected: <strong>${name}</strong></div>
+                    <div style="font-size: 16px; font-weight: bold; color: #ffcc00;">Selected: <strong>${name}</strong></div>
                     <div class="entity-stats">
                         <div>HP: ${hp}/${maxHp} 
                             <div class="mini-health-bar-container">
@@ -183,11 +212,15 @@ export class UIManager {
                         <div>AP: ${ap}/${maxAp}</div>
                     </div>
                 `;
+                console.log(`[UIManager] Updated selected entity info: ${name}, HP: ${hp}/${maxHp}, AP: ${ap}/${maxAp}`);
+                
+                // Make the selected entity info more visible
                 this.selectedEntityElement.style.display = 'block';
-                this.selectedEntityElement.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                this.selectedEntityElement.style.padding = '8px';
+                this.selectedEntityElement.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                this.selectedEntityElement.style.padding = '12px';
                 this.selectedEntityElement.style.borderRadius = '4px';
-                this.selectedEntityElement.style.border = '1px solid #666';
+                this.selectedEntityElement.style.border = '2px solid #ffcc00'; // Highlight border
+                this.selectedEntityElement.style.boxShadow = '0 0 10px rgba(255, 204, 0, 0.5)'; // Glow effect
             } else {
                 // Get the player's entity for displaying stats even when no entity is selected
                 const playerEntities = this.game.getEntityManager().getEntitiesByFaction(this.game.getPlayerFaction());
@@ -293,12 +326,34 @@ export class UIManager {
         if (result.success) {
             let message = '';
             if (result.hit) {
-                message = `${attacker.getName()} hits ${target.getName()} for ${result.damage} damage!`;
+                // Increase damage for more dramatic kills
+                const damage = result.damage || 0; // Handle undefined case
+                const amplifiedDamage = damage * 2; // Double the damage for testing
+                target.takeDamage(amplifiedDamage);
+                message = `${attacker.getName()} hits ${target.getName()} for ${amplifiedDamage} damage!`;
                 
                 // If the target is defeated, mark it as dead immediately for visual feedback
                 if (target.health <= 0) {
                     target.markAsDead(this.game.getTurnCount());
-                    message += ` ${target.getName()} is defeated!`;
+                    message += `\n💀 ${target.getName()} is defeated! 💀`;
+                    
+                    // Add dramatic visual effect for kills
+                    const killEffect = document.createElement('div');
+                    killEffect.className = 'kill-effect';
+                    killEffect.style.position = 'fixed';
+                    killEffect.style.top = '50%';
+                    killEffect.style.left = '50%';
+                    killEffect.style.transform = 'translate(-50%, -50%)';
+                    killEffect.style.fontSize = '48px';
+                    killEffect.style.color = '#ff0000';
+                    killEffect.style.textShadow = '0 0 10px #ff0000';
+                    killEffect.style.animation = 'kill-effect 1s forwards';
+                    killEffect.textContent = '💀';
+                    document.body.appendChild(killEffect);
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(killEffect);
+                    }, 1000);
                 }
             } else {
                 message = `${attacker.getName()} missed ${target.getName()}!`;
@@ -317,7 +372,8 @@ export class UIManager {
         // Create a floating message at the center of the screen
         const messageElement = document.createElement('div');
         messageElement.className = 'attack-result-message';
-        messageElement.textContent = message;
+        messageElement.innerHTML = message.replace('\n', '<br>'); // Support multi-line messages
+        messageElement.style.textAlign = 'center';
         document.body.appendChild(messageElement);
         
         // Remove the message after a delay
@@ -326,7 +382,7 @@ export class UIManager {
             setTimeout(() => {
                 document.body.removeChild(messageElement);
             }, 500);
-        }, 1500);
+        }, 2000);
     }
     
     private determineBestAttackType(attacker: Entity, target: Entity): AttackType | null {
@@ -372,6 +428,7 @@ export class UIManager {
                 // If it's a player entity, select it
                 this.selectEntity(entity);
                 this.targetEntity = null;
+                console.log(`[UIManager] After selection, selectedEntity = ${this.selectedEntity ? this.selectedEntity.getName() : 'null'}`);
             } else if (this.selectedEntity) {
                 console.log(`[UIManager] Setting enemy as target: ${entity.getName()}`);
                 // If it's an enemy and we have a selected entity, set it as target
@@ -420,8 +477,29 @@ export class UIManager {
     
     public selectEntity(entity: Entity | null): void {
         console.log(`[UIManager] Setting selected entity: ${entity ? entity.getName() : 'null'}`);
+        
+        // Clear previous selection
+        if (this.selectedEntity && this.selectedEntity !== entity) {
+            console.log(`[UIManager] Clearing previous selection: ${this.selectedEntity.getName()}`);
+        }
+        
+        // Update selection
         this.selectedEntity = entity;
         this.game.setSelectedEntity(entity);
+        
+        // Also update the movement system's selected entity
+        this.game.getMovement().setSelectedEntity(entity);
+        
+        if (entity) {
+            console.log(`[UIManager] Selected entity position: (${entity.position.x}, ${entity.position.y})`);
+        } else {
+            console.log(`[UIManager] No entity selected`);
+        }
+        
+        // Update UI to reflect selection
         this.updateSelectedEntityInfo();
+        
+        // Trigger a full UI update to refresh all elements
+        this.update();
     }
 } 
