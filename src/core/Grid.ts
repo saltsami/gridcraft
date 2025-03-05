@@ -14,6 +14,17 @@ export class Grid {
       this.width = width;
       this.height = height;
       this.tiles = Array(height).fill(null).map(() => Array(width).fill(null));
+      
+      // Initialize tiles with default terrain
+      this.initializeTiles();
+    }
+    
+    private initializeTiles(): void {
+      for (let y = 0; y < this.height; y++) {
+        for (let x = 0; x < this.width; x++) {
+          this.tiles[y][x] = new Tile(x, y, TerrainType.GRASS);
+        }
+      }
     }
     
     public getWidth(): number {

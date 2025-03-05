@@ -10,6 +10,7 @@
 - **Resource Management**: Resource collection and usage, with harvesting mechanics and forest clusters
 - **Fog of War**: Vision system based on entity sight range, with improved visibility states
 - **Development Environment**: Project setup with TypeScript, webpack, and npm scripts for easy development
+- **Enemy System**: Implemented multiple enemy types with unique stats and behaviors
 
 ### UI Components
 - **GridRenderer**: Comprehensive implementation for rendering the game grid, entities, and visibility states
@@ -27,15 +28,26 @@
 - Enhanced fog of war and visibility system
 - Fixed entity creation and instantiation issues
 - Added detailed setup instructions for developers
+- **Added Enemy Mobs**: Implemented four unique enemy types:
+  - Zombie: Melee-focused enemy with high health and armor
+  - Skeleton: Ranged attacker with high accuracy but lower health
+  - Spider: Fast-moving enemy with high evasion and more action points
+  - Creeper: Explosive enemy with powerful area-of-effect attacks
+- **Basic Enemy AI**: Implemented a simple AI system for enemies that:
+  - Targets and moves toward the nearest player entity
+  - Uses appropriate attack types (melee, ranged, or special) based on distance
+  - Manages action points to balance movement and attacks
 
 ## What's Missing
 
 ### Specific Entity Implementations:
-- No Worker or enemy (Zombie, Skeleton, etc.) classes yet
+- No Worker classes yet
 - No Building implementations
 
-### Enemy AI:
-- Enemy pathfinding and targeting is stubbed out but not implemented
+### Enemy AI Improvements:
+- Basic AI implemented, but requires more sophisticated pathfinding
+- No group coordination or tactical decision making
+- Special attacks are defined but not fully implemented
 
 ### Resource Gathering Mechanics:
 - Basic framework exists but needs integration with entity actions
@@ -64,13 +76,13 @@ Based on the game concept and current implementation, here's what should be prio
 - Add hero stats and progression
 
 ### 2. Complete Other Entity Implementations
-- Create specific entity classes for Worker, Buildings, and enemy types
+- Create specific entity classes for Worker, Buildings
 - Define unique attributes and abilities for each entity type
 - Implement building placement and construction
 
-### 3. Develop Enemy AI
-- Implement pathfinding for enemies to target player structures
-- Create different behavior patterns for different enemy types
+### 3. Enhance Enemy AI
+- Improve pathfinding for enemies to target player structures
+- Create more sophisticated behavior patterns for different enemy types
 - Balance enemy difficulty based on the day/night cycle progression
 
 ### 4. Expand Resource System

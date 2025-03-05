@@ -1,8 +1,7 @@
 // core/Game.ts - Main game controller
 import { Grid } from './Grid';
 import { ResourceManager, EntityManager, CombatSystem, FogOfWar } from '../systems';
-import { Entity } from '../entities';
-import { Hero } from '../entities/Hero';
+import { Entity, Hero, Zombie, Skeleton, Spider, Creeper } from '../entities';
 import { Position, Faction, EntityType } from '../types';
 
 export class Game {
@@ -93,8 +92,69 @@ export class Game {
   }
   
   private processEnemyAction(enemy: Entity): void {
-    // Simple AI for enemies - move toward closest player entity and attack if possible
-    // Implementation would depend on AI system
+    // Skip if the enemy has no action points
+    if (enemy.actionPoints <= 0) {
+      return;
+    }
+    
+    // Find the nearest player entity
+    const nearestPlayer = this.entityManager.getNearestEntity(enemy.position, Faction.PLAYER);
+    
+    if (!nearestPlayer) {
+      // No player entities found, do nothing
+      return;
+    }
+    
+    // Calculate distance to the nearest player
+    const dx = nearestPlayer.position.x - enemy.position.x;
+    const dy = nearestPlayer.position.y - enemy.position.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Check if we can attack
+    let canAttack = false;
+    
+    // If we have a melee attack and are adjacent to the player
+    if (enemy.meleeAttackPower > 0 && distance <= 1) {
+      canAttack = true;
+      // Attack logic would go here
+      console.log(`${enemy.getName()} attacks ${nearestPlayer.getName()} in melee`);
+      // Simulate attack by using an action point
+      enemy.actionPoints--;
+    } 
+    // If we have a ranged attack and are within range
+    else if (enemy.rangedAttackPower > 0 && distance <= enemy.rangedAttackRange) {
+      canAttack = true;
+      // Attack logic would go here
+      console.log(`${enemy.getName()} attacks ${nearestPlayer.getName()} at range`);
+      // Simulate attack by using an action point
+      enemy.actionPoints--;
+    }
+    // If we have a special attack and are within range
+    else if (enemy.specialAttackPower > 0 && distance <= enemy.specialAttackRange) {
+      canAttack = true;
+      // Attack logic would go here
+      console.log(`${enemy.getName()} uses special attack on ${nearestPlayer.getName()}`);
+      // Simulate attack by using all action points
+      enemy.actionPoints = 0;
+    }
+    
+    // If we can't attack, try to move toward the player
+    if (!canAttack && enemy.actionPoints > 0) {
+      // Simple movement: move one step toward the player
+      const moveX = dx !== 0 ? (dx > 0 ? 1 : -1) : 0;
+      const moveY = dy !== 0 ? (dy > 0 ? 1 : -1) : 0;
+      
+      const newPosition = {
+        x: enemy.position.x + moveX,
+        y: enemy.position.y + moveY
+      };
+      
+      // Try to move to the new position
+      const moved = this.moveEntity(enemy, newPosition);
+      if (moved) {
+        console.log(`${enemy.getName()} moved toward ${nearestPlayer.getName()}`);
+      }
+    }
   }
   
   private spawnEnemies(): void {
@@ -109,8 +169,27 @@ export class Game {
   }
   
   private createEnemy(position: Position): void {
-    // Create an enemy entity and add to entity manager
-    // Implementation would depend on enemy types
+    // Random enemy type based on a weighted distribution
+    const roll = Math.random();
+    let enemy: Entity;
+    
+    if (roll < 0.4) {
+      // 40% chance for Zombie
+      enemy = new Zombie(position);
+    } else if (roll < 0.7) {
+      // 30% chance for Skeleton
+      enemy = new Skeleton(position);
+    } else if (roll < 0.9) {
+      // 20% chance for Spider
+      enemy = new Spider(position);
+    } else {
+      // 10% chance for Creeper
+      enemy = new Creeper(position);
+    }
+    
+    // Add the enemy to the entity manager
+    this.entityManager.addEntity(enemy);
+    console.log(`${enemy.getName()} spawned at position (${position.x}, ${position.y})`);
   }
   
   private updateFogOfWar(): void {
