@@ -144,9 +144,26 @@ export class UIManager {
             actionPanel.className = 'combat-actions-panel';
             actionPanel.style.display = 'none';
             
-            // Add to action panel if it exists, otherwise to the body
-            const container = this.actionsPanelElement || document.body;
-            container.appendChild(actionPanel);
+            // Style the panel
+            actionPanel.style.position = 'absolute';
+            actionPanel.style.left = '10px';
+            actionPanel.style.bottom = '120px';
+            actionPanel.style.backgroundColor = 'rgba(30, 30, 30, 0.9)';
+            actionPanel.style.border = '2px solid #444';
+            actionPanel.style.borderRadius = '5px';
+            actionPanel.style.padding = '8px 12px';
+            actionPanel.style.zIndex = '1000';
+            actionPanel.style.minWidth = '200px';
+            actionPanel.style.color = 'white';
+            actionPanel.style.pointerEvents = 'auto'; // Make sure panel is clickable
+            
+            // Add to the UI overlay instead of game container
+            const uiOverlay = document.getElementById('ui-overlay');
+            if (uiOverlay) {
+                uiOverlay.appendChild(actionPanel);
+            } else {
+                document.body.appendChild(actionPanel);
+            }
         }
     }
     
@@ -263,15 +280,25 @@ export class UIManager {
     
     private updateCombatActions(): void {
         const actionPanel = document.getElementById('combat-actions');
-        if (!actionPanel) return;
+        if (!actionPanel) {
+            console.error('[UIManager] Combat actions panel not found');
+            return;
+        }
         
         // Only show combat actions if we have both a selected entity and a target entity
-        if (this.selectedEntity && this.targetEntity && 
-            this.selectedEntity.faction !== this.targetEntity.faction && 
-            this.selectedEntity.actionPoints > 0) {
-            
+        const shouldShowPanel = this.selectedEntity && 
+                              this.targetEntity && 
+                              this.selectedEntity.faction !== this.targetEntity.faction && 
+                              this.selectedEntity.actionPoints > 0;
+        
+        console.log(`[UIManager] Should show combat panel: ${shouldShowPanel}`);
+        console.log(`[UIManager] Selected entity: ${this.selectedEntity?.getName()}`);
+        console.log(`[UIManager] Target entity: ${this.targetEntity?.getName()}`);
+        
+        if (shouldShowPanel && this.selectedEntity && this.targetEntity) {
             // Calculate best attack type
             const attackType = this.determineBestAttackType(this.selectedEntity, this.targetEntity);
+            console.log(`[UIManager] Determined attack type: ${attackType}`);
             
             if (attackType) {
                 // Clear existing content
@@ -282,25 +309,52 @@ export class UIManager {
                 attackButton.className = 'attack-button';
                 attackButton.textContent = `Attack ${this.targetEntity.getName()} (${this.getAttackTypeName(attackType)})`;
                 
-                // Ensure button has proper sizing
-                attackButton.style.width = '100%';
-                attackButton.style.padding = '10px 20px'; // Larger padding for easier clicking
+                // Style the button
+                attackButton.style.backgroundColor = '#b71c1c';
+                attackButton.style.color = 'white';
+                attackButton.style.padding = '10px 20px';
                 attackButton.style.margin = '5px';
                 attackButton.style.fontSize = '16px';
                 attackButton.style.cursor = 'pointer';
+                attackButton.style.border = 'none';
+                attackButton.style.borderRadius = '4px';
+                attackButton.style.width = '100%';
+                attackButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                attackButton.style.pointerEvents = 'auto';
                 
-                // Add click handler for attack
-                attackButton.addEventListener('click', () => {
-                    console.log(`[UIManager] Attack button clicked. ${this.selectedEntity?.getName()} attacking ${this.targetEntity?.getName()}`);
-                    this.executeAttack(this.selectedEntity!, this.targetEntity!, attackType!);
+                // Store references to entities to ensure they exist when clicked
+                const currentAttacker = this.selectedEntity;
+                const currentTarget = this.targetEntity;
+                
+                // Add click handler for attack using addEventListener instead of onclick
+                attackButton.addEventListener('click', (e: MouseEvent) => {
+                    console.log('[UIManager] Attack button clicked');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (!currentAttacker || !currentTarget) {
+                        console.error('[UIManager] Attacker or target is null');
+                        return;
+                    }
+                    
+                    console.log(`[UIManager] Executing attack from ${currentAttacker.getName()} to ${currentTarget.getName()}`);
+                    this.executeAttack(currentAttacker, currentTarget, attackType);
                 });
                 
                 actionPanel.appendChild(attackButton);
-                actionPanel.style.display = 'flex';
+                
+                // Ensure the panel is visible and clickable
+                actionPanel.style.display = 'block';
+                actionPanel.style.zIndex = '1000';
+                actionPanel.style.pointerEvents = 'auto';
+                
+                console.log('[UIManager] Combat panel and attack button created');
             } else {
+                console.log('[UIManager] No valid attack type found, hiding panel');
                 actionPanel.style.display = 'none';
             }
         } else {
+            console.log('[UIManager] Conditions not met for showing combat panel');
             actionPanel.style.display = 'none';
         }
     }
@@ -315,6 +369,8 @@ export class UIManager {
     }
     
     private executeAttack(attacker: Entity, target: Entity, attackType: AttackType): void {
+        console.log(`[UIManager] Executing attack - Attacker: ${attacker.getName()}, Target: ${target.getName()}, Type: ${attackType}`);
+        
         // Execute attack using combat system
         const result = this.game.getCombatSystem().resolveAttack(
             attacker, 
@@ -323,19 +379,19 @@ export class UIManager {
             this.game.getGrid()
         );
         
+        console.log(`[UIManager] Attack result:`, result);
+        
         if (result.success) {
             let message = '';
             if (result.hit) {
-                // Increase damage for more dramatic kills
-                const damage = result.damage || 0; // Handle undefined case
-                const amplifiedDamage = damage * 2; // Double the damage for testing
-                target.takeDamage(amplifiedDamage);
-                message = `${attacker.getName()} hits ${target.getName()} for ${amplifiedDamage} damage!`;
+                message = `${attacker.getName()} hits ${target.getName()} for ${result.damage} damage!`;
+                console.log(`[UIManager] Hit! Damage dealt: ${result.damage}`);
                 
                 // If the target is defeated, mark it as dead immediately for visual feedback
                 if (target.health <= 0) {
                     target.markAsDead(this.game.getTurnCount());
                     message += `\n💀 ${target.getName()} is defeated! 💀`;
+                    console.log(`[UIManager] Target defeated!`);
                     
                     // Add dramatic visual effect for kills
                     const killEffect = document.createElement('div');
@@ -357,6 +413,7 @@ export class UIManager {
                 }
             } else {
                 message = `${attacker.getName()} missed ${target.getName()}!`;
+                console.log(`[UIManager] Attack missed!`);
             }
             
             // Show attack result
@@ -365,6 +422,9 @@ export class UIManager {
             // Update UI
             this.targetEntity = null;
             this.update();
+        } else {
+            console.log(`[UIManager] Attack failed: ${result.message}`);
+            this.showAttackResult(`Attack failed: ${result.message}`);
         }
     }
     
@@ -391,22 +451,28 @@ export class UIManager {
         const dy = target.position.y - attacker.position.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
+        console.log(`[UIManager] Calculating best attack type. Distance: ${distance}`);
+        console.log(`Attacker stats - Melee: ${attacker.meleeAttackPower}, Ranged: ${attacker.rangedAttackPower}, Range: ${attacker.rangedAttackRange}`);
+        
         // Check melee attack first (adjacent)
         if (distance <= 1.5 && attacker.meleeAttackPower > 0) {
+            console.log('[UIManager] Selected melee attack');
             return AttackType.MELEE;
         }
         
         // Check ranged attack next
         if (distance <= attacker.rangedAttackRange && attacker.rangedAttackPower > 0) {
+            console.log('[UIManager] Selected ranged attack');
             return AttackType.RANGED;
         }
         
         // Check special attack last
         if (distance <= attacker.specialAttackRange && attacker.specialAttackPower > 0) {
+            console.log('[UIManager] Selected special attack');
             return AttackType.SPECIAL;
         }
         
-        // No valid attack type
+        console.log('[UIManager] No valid attack type found');
         return null;
     }
 

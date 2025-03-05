@@ -67,7 +67,9 @@ export class CombatSystem {
   }
   
   public calculateDistance(a: Position, b: Position): number {
-    return Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2));
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    return Math.sqrt(dx * dx + dy * dy);
   }
   
   private isInRange(attackType: AttackType, attacker: Entity, distance: number): boolean {
@@ -93,10 +95,10 @@ export class CombatSystem {
     
     switch (attackType) {
       case AttackType.MELEE:
-        baseChance = 85; // High base chance for melee
+        baseChance = 90; // Increased from 85
         break;
       case AttackType.RANGED:
-        baseChance = 75 - (distance * 5); // Decreases with distance
+        baseChance = 85 - (distance * 3); // Reduced distance penalty from 5 to 3
         break;
       case AttackType.SPECIAL:
         baseChance = attacker.specialAttackAccuracy;
@@ -105,13 +107,10 @@ export class CombatSystem {
     
     // Apply modifiers
     baseChance += attacker.accuracy;
-    baseChance -= target.evasion;
+    baseChance -= target.evasion * 0.5; // Reduced evasion impact
     
-    // Environmental modifiers (cover, elevation, etc.)
-    // Would be implemented here
-    
-    // Clamp value
-    return Math.max(5, Math.min(95, baseChance));
+    // Clamp value between 30 and 95 (increased minimum from 5 to 30)
+    return Math.max(30, Math.min(95, baseChance));
   }
   
   public calculateDamage(attacker: Entity, target: Entity, attackType: AttackType): number {

@@ -119,7 +119,7 @@ export class Game {
   }
   
   private processEnemyAction(enemy: Entity): void {
-    // Skip if the enemy has dead or has no action points
+    // Skip if the enemy is dead or has no action points
     if (enemy.isDead || enemy.actionPoints <= 0) {
       return;
     }
@@ -133,189 +133,425 @@ export class Game {
     }
     
     // Calculate distance to the nearest player
-    const dx = nearestPlayer.position.x - enemy.position.x;
-    const dy = nearestPlayer.position.y - enemy.position.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const getDistance = () => {
+      const dx = nearestPlayer.position.x - enemy.position.x;
+      const dy = nearestPlayer.position.y - enemy.position.y;
+      return {
+        distance: Math.sqrt(dx * dx + dy * dy),
+        dx,
+        dy
+      };
+    };
     
-    // Special handling for Creepers - they are more aggressive
-    if (enemy.getType() === EntityType.CREEPER) {
-      // Creepers will always try to get close to the player
-      // If within special attack range, they'll use their explosive attack
-      if (distance <= enemy.specialAttackRange) {
-        // Use special attack
-        const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.SPECIAL, this.grid);
-        
-        if (attackResult.hit) {
-          console.log(`${enemy.getName()} explodes near ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
-        } else {
-          console.log(`${enemy.getName()} tried to explode but somehow missed.`);
-        }
-        
-        // Creeper uses all action points for special attack
-        enemy.actionPoints = 0;
-        return;
-      } 
-      // If within melee range, use melee attack
-      else if (distance <= 1) {
-        const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.MELEE, this.grid);
-        
-        if (attackResult.hit) {
-          console.log(`${enemy.getName()} attacks ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
-        } else {
-          console.log(`${enemy.getName()} missed ${nearestPlayer.getName()}`);
-        }
-        
-        // Use an action point
-        enemy.actionPoints--;
-      }
-      
-      // Creepers will use all remaining action points to move toward the player
-      while (enemy.actionPoints > 0) {
-        // Calculate move direction toward player
-        const moveX = dx !== 0 ? (dx > 0 ? 1 : -1) : 0;
-        const moveY = dy !== 0 ? (dy > 0 ? 1 : -1) : 0;
-        
-        const newPosition = {
-          x: enemy.position.x + moveX,
-          y: enemy.position.y + moveY
-        };
-        
-        // Try to move to the new position
-        const moved = this.moveEntity(enemy, newPosition);
-        if (moved) {
-          console.log(`${enemy.getName()} aggressively moved toward ${nearestPlayer.getName()}`);
-          enemy.actionPoints--;
-        } else {
-          // If we can't move directly toward the player, try alternative paths
-          const alternativeMoves = [
-            { x: enemy.position.x + moveX, y: enemy.position.y },
-            { x: enemy.position.x, y: enemy.position.y + moveY },
-            { x: enemy.position.x + (moveX !== 0 ? 0 : 1), y: enemy.position.y + (moveY !== 0 ? 0 : 1) },
-            { x: enemy.position.x + (moveX !== 0 ? 0 : -1), y: enemy.position.y + (moveY !== 0 ? 0 : -1) }
-          ];
-          
-          let foundAlternative = false;
-          for (const altMove of alternativeMoves) {
-            if (this.moveEntity(enemy, altMove)) {
-              console.log(`${enemy.getName()} found path around obstacle toward ${nearestPlayer.getName()}`);
-              enemy.actionPoints--;
-              foundAlternative = true;
-              break;
-            }
-          }
-          
-          if (!foundAlternative) {
-            // If we can't move at all, just end turn
-            enemy.actionPoints = 0;
-          }
-        }
-      }
-      return; // End processing for Creeper
-    }
+    let { distance, dx, dy } = getDistance();
     
-    // Regular enemy AI for other enemy types
-    // Check if we can attack
-    let canAttack = false;
+    // Safety check for action points
+    let actionPointsUsed = 0;
+    const maxIterations = 10; // Prevent infinite loops
+    let iterations = 0;
     
-    // If we have a melee attack and are adjacent to the player
-    if (enemy.meleeAttackPower > 0 && distance <= 1) {
-      canAttack = true;
-      // Attack the player
-      const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.MELEE, this.grid);
-      
-      if (attackResult.hit) {
-        console.log(`${enemy.getName()} attacks ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
-      } else {
-        console.log(`${enemy.getName()} missed ${nearestPlayer.getName()}`);
+    // Process based on enemy type
+    try {
+      switch (enemy.getType()) {
+        case EntityType.CREEPER:
+          this.processCreeperAction(enemy, nearestPlayer, distance, dx, dy);
+          break;
+        case EntityType.SKELETON:
+          this.processSkeletonAction(enemy, nearestPlayer, distance, dx, dy);
+          break;
+        case EntityType.SPIDER:
+          this.processSpiderAction(enemy, nearestPlayer, distance, dx, dy);
+          break;
+        case EntityType.ZOMBIE:
+          this.processZombieAction(enemy, nearestPlayer, distance, dx, dy);
+          break;
+        default:
+          this.processDefaultEnemyAction(enemy, nearestPlayer, distance, dx, dy);
       }
-      
-      // Use an action point
-      enemy.actionPoints--;
-    } 
-    // If we have a ranged attack and are within range
-    else if (enemy.rangedAttackPower > 0 && distance <= enemy.rangedAttackRange) {
-      canAttack = true;
-      // Attack the player
-      const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.RANGED, this.grid);
-      
-      if (attackResult.hit) {
-        console.log(`${enemy.getName()} shoots ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
-      } else {
-        console.log(`${enemy.getName()} shot at ${nearestPlayer.getName()} but missed`);
-      }
-      
-      // Use an action point
-      enemy.actionPoints--;
-    }
-    // If we have a special attack and are within range
-    else if (enemy.specialAttackPower > 0 && distance <= enemy.specialAttackRange) {
-      canAttack = true;
-      // Use special attack
-      const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.SPECIAL, this.grid);
-      
-      if (attackResult.hit) {
-        console.log(`${enemy.getName()} uses special attack on ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
-      } else {
-        console.log(`${enemy.getName()}'s special attack missed ${nearestPlayer.getName()}`);
-      }
-      
-      // Use all action points
+    } catch (error) {
+      console.error(`Error processing enemy action for ${enemy.getName()}:`, error);
+      // Ensure the enemy's turn ends even if there's an error
       enemy.actionPoints = 0;
     }
+  }
+
+  private processCreeperAction(enemy: Entity, target: Entity, distance: number, dx: number, dy: number): void {
+    if (!enemy || !target) return;
     
-    // If we can't attack, try to move toward the player
-    if (!canAttack && enemy.actionPoints > 0) {
-      // Simple movement: move one step toward the player
-      const moveX = dx !== 0 ? (dx > 0 ? 1 : -1) : 0;
-      const moveY = dy !== 0 ? (dy > 0 ? 1 : -1) : 0;
+    // Creepers are suicide bombers - they try to get close and explode
+    if (distance <= enemy.specialAttackRange) {
+      // Use special explosive attack
+      const attackResult = this.combatSystem.resolveAttack(enemy, target, AttackType.SPECIAL, this.grid);
+      if (attackResult?.hit) {
+        console.log(`${enemy.getName()} explodes near ${target.getName()} for ${attackResult.damage} damage!`);
+        // Creeper dies after exploding
+        enemy.health = 0;
+        enemy.markAsDead(this.turnCount);
+      }
+      enemy.actionPoints = 0;
+      return;
+    }
+
+    let iterations = 0;
+    const maxIterations = enemy.maxActionPoints * 2; // Allow for some failed moves
+    
+    while (enemy.actionPoints > 0 && iterations < maxIterations) {
+      iterations++;
+      const moved = this.moveTowardTarget(enemy, target, true);
+      if (!moved) break;
       
-      const newPosition = {
-        x: enemy.position.x + moveX,
-        y: enemy.position.y + moveY
-      };
+      // Recalculate distance after movement
+      const newDx = target.position.x - enemy.position.x;
+      const newDy = target.position.y - enemy.position.y;
+      distance = Math.sqrt(newDx * newDx + newDy * newDy);
       
-      // Try to move to the new position
-      const moved = this.moveEntity(enemy, newPosition);
-      if (moved) {
-        console.log(`${enemy.getName()} moved toward ${nearestPlayer.getName()}`);
-        enemy.actionPoints--;
+      // Check if we can now explode
+      if (distance <= enemy.specialAttackRange) {
+        const attackResult = this.combatSystem.resolveAttack(enemy, target, AttackType.SPECIAL, this.grid);
+        if (attackResult?.hit) {
+          console.log(`${enemy.getName()} explodes near ${target.getName()} for ${attackResult.damage} damage!`);
+          enemy.health = 0;
+          enemy.markAsDead(this.turnCount);
+        }
+        enemy.actionPoints = 0;
+        break;
       }
     }
+  }
+
+  private processSkeletonAction(enemy: Entity, target: Entity, distance: number, dx: number, dy: number): void {
+    if (!enemy || !target) return;
+    
+    const optimalRange = enemy.rangedAttackRange - 1;
+    let iterations = 0;
+    const maxIterations = enemy.maxActionPoints * 2;
+
+    while (enemy.actionPoints > 0 && iterations < maxIterations) {
+      iterations++;
+      
+      // Recalculate distance
+      const newDx = target.position.x - enemy.position.x;
+      const newDy = target.position.y - enemy.position.y;
+      distance = Math.sqrt(newDx * newDx + newDy * newDy);
+      
+      if (distance <= enemy.rangedAttackRange) {
+        // If too close, try to move away while maintaining range
+        if (distance < optimalRange) {
+          const moveAwayPos = {
+            x: enemy.position.x - Math.sign(newDx),
+            y: enemy.position.y - Math.sign(newDy)
+          };
+          if (this.grid.isValidMove(enemy, moveAwayPos) && this.moveEntity(enemy, moveAwayPos)) {
+            continue;
+          }
+        }
+        
+        // Attack if in range
+        const attackResult = this.combatSystem.resolveAttack(enemy, target, AttackType.RANGED, this.grid);
+        if (attackResult?.hit) {
+          console.log(`${enemy.getName()} shoots ${target.getName()} for ${attackResult.damage} damage!`);
+        }
+        break; // End turn after attacking
+      } else {
+        // Move closer if too far
+        if (!this.moveTowardTarget(enemy, target, false)) {
+          break; // End turn if can't move
+        }
+      }
+    }
+  }
+
+  private processSpiderAction(enemy: Entity, target: Entity, distance: number, dx: number, dy: number): void {
+    if (!enemy || !target) return;
+    
+    let iterations = 0;
+    const maxIterations = enemy.maxActionPoints * 2;
+    
+    // Spiders are fast and try to flank the player
+    while (enemy.actionPoints > 0 && iterations < maxIterations) {
+      iterations++;
+      
+      // Recalculate distance after any movement
+      const newDx = target.position.x - enemy.position.x;
+      const newDy = target.position.y - enemy.position.y;
+      distance = Math.sqrt(newDx * newDx + newDy * newDy);
+      
+      if (distance <= 1) {
+        // Try special poison attack first
+        if (enemy.specialAttackPower > 0) {
+          const attackResult = this.combatSystem.resolveAttack(enemy, target, AttackType.SPECIAL, this.grid);
+          if (attackResult?.hit) {
+            console.log(`${enemy.getName()} poisons ${target.getName()} for ${attackResult.damage} damage!`);
+            enemy.actionPoints = 0;
+            return;
+          }
+        }
+        
+        // Regular attack if special failed or unavailable
+        const attackResult = this.combatSystem.resolveAttack(enemy, target, AttackType.MELEE, this.grid);
+        if (attackResult?.hit) {
+          console.log(`${enemy.getName()} bites ${target.getName()} for ${attackResult.damage} damage!`);
+          enemy.actionPoints = Math.max(0, enemy.actionPoints - 1);
+        }
+        break; // End turn after attacking
+      } else {
+        // Try to move to flanking position
+        const flankingPositions = [
+          { x: target.position.x + 1, y: target.position.y + 1 },
+          { x: target.position.x - 1, y: target.position.y + 1 },
+          { x: target.position.x + 1, y: target.position.y - 1 },
+          { x: target.position.x - 1, y: target.position.y - 1 }
+        ].filter(pos => this.grid.isValidMove(enemy, pos)); // Pre-filter invalid positions
+        
+        let moved = false;
+        for (const pos of flankingPositions) {
+          if (this.moveEntity(enemy, pos)) {
+            moved = true;
+            break;
+          }
+        }
+        
+        // If can't move to flanking position, move directly toward target
+        if (!moved && !this.moveTowardTarget(enemy, target, true)) {
+          break; // End turn if couldn't move at all
+        }
+      }
+    }
+    
+    // Ensure turn ends
+    if (enemy.actionPoints > 0) {
+      console.log(`[Game] Spider ${enemy.getName()} ending turn with ${enemy.actionPoints} AP remaining`);
+      enemy.actionPoints = 0;
+    }
+  }
+
+  private processZombieAction(enemy: Entity, target: Entity, distance: number, dx: number, dy: number): void {
+    if (!enemy || !target) return;
+    
+    let iterations = 0;
+    const maxIterations = enemy.maxActionPoints * 2;
+    
+    // Zombies are relentless - they keep moving toward the player and attack when in range
+    while (enemy.actionPoints > 0 && iterations < maxIterations) {
+      iterations++;
+      
+      // Recalculate distance after any movement
+      const newDx = target.position.x - enemy.position.x;
+      const newDy = target.position.y - enemy.position.y;
+      distance = Math.sqrt(newDx * newDx + newDy * newDy);
+      
+      if (distance <= 1) {
+        const attackResult = this.combatSystem.resolveAttack(enemy, target, AttackType.MELEE, this.grid);
+        if (attackResult?.hit) {
+          console.log(`${enemy.getName()} slams ${target.getName()} for ${attackResult.damage} damage!`);
+          enemy.actionPoints = Math.max(0, enemy.actionPoints - 1);
+        }
+        break; // End turn after attacking
+      } else {
+        // Zombies will try to break through obstacles to reach the player
+        const moved = this.moveTowardTarget(enemy, target, true);
+        if (!moved) {
+          // If can't move, end turn to prevent infinite loop
+          break;
+        }
+      }
+    }
+    
+    // Ensure turn ends
+    if (enemy.actionPoints > 0) {
+      console.log(`[Game] Zombie ${enemy.getName()} ending turn with ${enemy.actionPoints} AP remaining`);
+      enemy.actionPoints = 0;
+    }
+  }
+
+  private processDefaultEnemyAction(enemy: Entity, target: Entity, distance: number, dx: number, dy: number): void {
+    if (!enemy || !target) return;
+    
+    let iterations = 0;
+    const maxIterations = enemy.maxActionPoints * 2;
+    
+    while (enemy.actionPoints > 0 && iterations < maxIterations) {
+      iterations++;
+      
+      // Recalculate distance after any movement
+      const newDx = target.position.x - enemy.position.x;
+      const newDy = target.position.y - enemy.position.y;
+      distance = Math.sqrt(newDx * newDx + newDy * newDy);
+      
+      let attacked = false;
+      
+      // Try to attack if in range
+      if (distance <= 1 && enemy.meleeAttackPower > 0) {
+        const attackResult = this.combatSystem.resolveAttack(enemy, target, AttackType.MELEE, this.grid);
+        attacked = attackResult?.success || false;
+      } else if (distance <= enemy.rangedAttackRange && enemy.rangedAttackPower > 0) {
+        const attackResult = this.combatSystem.resolveAttack(enemy, target, AttackType.RANGED, this.grid);
+        attacked = attackResult?.success || false;
+      } else if (distance <= enemy.specialAttackRange && enemy.specialAttackPower > 0) {
+        const attackResult = this.combatSystem.resolveAttack(enemy, target, AttackType.SPECIAL, this.grid);
+        attacked = attackResult?.success || false;
+      }
+      
+      if (attacked) {
+        enemy.actionPoints = Math.max(0, enemy.actionPoints - 1);
+        break; // End turn after successful attack
+      }
+      
+      // If couldn't attack, try to move closer
+      if (!this.moveTowardTarget(enemy, target, false)) {
+        break; // End turn if couldn't move
+      }
+    }
+    
+    // Ensure turn ends
+    if (enemy.actionPoints > 0) {
+      console.log(`[Game] Enemy ${enemy.getName()} ending turn with ${enemy.actionPoints} AP remaining`);
+      enemy.actionPoints = 0;
+    }
+  }
+
+  private moveTowardTarget(entity: Entity, target: Entity, aggressive: boolean): boolean {
+    if (!entity || !target) return false;
+    
+    const dx = target.position.x - entity.position.x;
+    const dy = target.position.y - entity.position.y;
+    
+    // Prevent moving if already at 0 action points
+    if (entity.actionPoints <= 0) return false;
+    
+    // Calculate primary and alternative move directions
+    const moveX = dx !== 0 ? Math.sign(dx) : 0;
+    const moveY = dy !== 0 ? Math.sign(dy) : 0;
+    
+    // Try direct movement first
+    const directMove = {
+      x: entity.position.x + moveX,
+      y: entity.position.y + moveY
+    };
+    
+    // Validate move is within grid bounds
+    if (this.grid.isValidMove(entity, directMove) && this.moveEntity(entity, directMove)) {
+      return true;
+    }
+    
+    // If direct movement fails and we're being aggressive, try alternative paths
+    if (aggressive) {
+      const alternativeMoves = [
+        { x: entity.position.x + moveX, y: entity.position.y },
+        { x: entity.position.x, y: entity.position.y + moveY },
+        { x: entity.position.x + (moveX !== 0 ? 0 : 1), y: entity.position.y + (moveY !== 0 ? 0 : 1) },
+        { x: entity.position.x + (moveX !== 0 ? 0 : -1), y: entity.position.y + (moveY !== 0 ? 0 : -1) }
+      ].filter(move => this.grid.isValidMove(entity, move)); // Pre-filter invalid moves
+      
+      for (const move of alternativeMoves) {
+        if (this.moveEntity(entity, move)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
   
   private spawnEnemies(): void {
-    // Spawn enemies at spawn points based on turn count (difficulty)
+    // Get valid spawn points
     const spawnPoints = this.grid.getEnemySpawnPoints();
-    const enemyCount = Math.min(spawnPoints.length, Math.floor(this.turnCount / 10) + 2);
     
-    for (let i = 0; i < enemyCount; i++) {
-      const spawnPoint = spawnPoints[i % spawnPoints.length];
-      this.createEnemy(spawnPoint);
+    // Safety check - if no spawn points available, don't try to spawn
+    if (!spawnPoints || spawnPoints.length === 0) {
+      console.warn('[Game] No valid spawn points available for enemies');
+      return;
+    }
+
+    // Calculate number of enemies to spawn based on turn count (difficulty)
+    // Cap maximum enemies to prevent overwhelming spawns
+    const baseEnemies = Math.floor(this.turnCount / 10) + 2;
+    const maxEnemies = Math.min(spawnPoints.length, baseEnemies, 5); // Never spawn more than 5 enemies at once
+    
+    console.log(`[Game] Attempting to spawn ${maxEnemies} enemies on turn ${this.turnCount}`);
+    
+    // Keep track of used spawn points to prevent multiple enemies at same location
+    const usedSpawnPoints = new Set<string>();
+    
+    for (let i = 0; i < maxEnemies; i++) {
+      // Try to find an unused spawn point
+      let attempts = 0;
+      const maxAttempts = spawnPoints.length * 2;
+      let validSpawnFound = false;
+      
+      while (attempts < maxAttempts && !validSpawnFound) {
+        const spawnPoint = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
+        const spawnKey = `${spawnPoint.x},${spawnPoint.y}`;
+        
+        // Check if spawn point is already used or if there's an entity there
+        if (!usedSpawnPoints.has(spawnKey) && !this.entityManager.getEntityAtPosition(spawnPoint)) {
+          try {
+            const enemy = this.createEnemy(spawnPoint);
+            if (enemy) {
+              usedSpawnPoints.add(spawnKey);
+              validSpawnFound = true;
+              console.log(`[Game] Successfully spawned ${enemy.getName()} at (${spawnPoint.x}, ${spawnPoint.y})`);
+            }
+          } catch (error) {
+            console.error(`[Game] Error spawning enemy at (${spawnPoint.x}, ${spawnPoint.y}):`, error);
+          }
+        }
+        attempts++;
+      }
+      
+      if (!validSpawnFound) {
+        console.warn(`[Game] Failed to find valid spawn point after ${maxAttempts} attempts`);
+        break; // Stop trying to spawn more enemies if we can't find valid positions
+      }
     }
   }
   
-  private createEnemy(position: Position): void {
-    // Random enemy type based on a weighted distribution
-    const roll = Math.random();
-    let enemy: Entity;
-    
-    if (roll < 0.4) {
-      // 40% chance for Zombie
-      enemy = new Zombie(position);
-    } else if (roll < 0.7) {
-      // 30% chance for Skeleton
-      enemy = new Skeleton(position);
-    } else if (roll < 0.9) {
-      // 20% chance for Spider
-      enemy = new Spider(position);
-    } else {
-      // 10% chance for Creeper
-      enemy = new Creeper(position);
+  private createEnemy(position: Position): Entity | null {
+    try {
+      // Create a temporary zombie to check position validity
+      const tempEntity = new Zombie(position);
+      // Validate position before creating enemy
+      if (!this.grid.isValidMove(tempEntity, position)) {
+        console.warn(`[Game] Invalid spawn position: (${position.x}, ${position.y})`);
+        return null;
+      }
+      
+      // Random enemy type based on a weighted distribution and turn count
+      const roll = Math.random();
+      let enemy: Entity;
+      
+      // Adjust enemy type distribution based on turn count
+      // Later turns have higher chances for stronger enemies
+      const difficultyFactor = Math.min(this.turnCount / 20, 1); // Caps at turn 20
+      
+      if (roll < 0.4 - difficultyFactor * 0.2) {
+        // Reduced chance for basic Zombie in later turns
+        enemy = new Zombie(position);
+      } else if (roll < 0.7 - difficultyFactor * 0.1) {
+        // Slightly reduced chance for Skeleton
+        enemy = new Skeleton(position);
+      } else if (roll < 0.9) {
+        // Consistent chance for Spider
+        enemy = new Spider(position);
+      } else {
+        // Increased chance for Creeper in later turns
+        enemy = new Creeper(position);
+      }
+      
+      // Initialize enemy with proper stats
+      enemy.health = enemy.maxHealth;
+      enemy.actionPoints = enemy.maxActionPoints;
+      
+      // Add the enemy to the entity manager
+      this.entityManager.addEntity(enemy);
+      
+      console.log(`[Game] Created ${enemy.getName()} at position (${position.x}, ${position.y})`);
+      return enemy;
+      
+    } catch (error) {
+      console.error(`[Game] Error creating enemy:`, error);
+      return null;
     }
-    
-    // Add the enemy to the entity manager
-    this.entityManager.addEntity(enemy);
-    console.log(`${enemy.getName()} spawned at position (${position.x}, ${position.y})`);
   }
   
   private updateFogOfWar(): void {

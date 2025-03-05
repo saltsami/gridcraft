@@ -9,19 +9,19 @@ export class Hero extends Entity {
         super(position, Faction.PLAYER);
         
         // Set hero-specific properties
-        this.maxHealth = 100;
-        this.health = 100;
+        this.maxHealth = 120;
+        this.health = 120;
         this.maxActionPoints = 3;
         this.actionPoints = 3;
         this.sightRange = 10;
         
         // Combat stats
-        this.accuracy = 10;
-        this.evasion = 5;
-        this.armor = 2;
-        this.meleeAttackPower = 10;
-        this.rangedAttackPower = 8;
-        this.rangedAttackRange = 3;
+        this.accuracy = 15;
+        this.evasion = 10;
+        this.armor = 3;
+        this.meleeAttackPower = 15;
+        this.rangedAttackPower = 12;
+        this.rangedAttackRange = 4;
         
         // Hero can gather resources
         this.canGatherResources = true;
