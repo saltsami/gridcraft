@@ -77,8 +77,14 @@ function setupEventListeners(
     uiManager: UIManager,
     combatCalculator: CombatCalculator
 ) {
+    console.log('[index] Setting up event listeners');
+    
     // Get the canvas element
     const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+    if (!canvas) {
+        console.error('[index] Game canvas not found!');
+        return;
+    }
     
     // Mouse movement (hover)
     canvas.addEventListener('mousemove', (event) => {
@@ -92,6 +98,13 @@ function setupEventListeners(
         // Highlight the tile under cursor
         gridRenderer.setHoveredTile(gridPos);
         
+        // Update movement path when hovering
+        const selectedEntity = game.getSelectedEntity();
+        if (selectedEntity) {
+            // Calculate path to hovered tile for movement visualization
+            game.getMovement().calculatePath(gridPos);
+        }
+        
         // Check if we're hovering over an entity
         const hoveredEntity = game.getEntityManager().getEntityAtPosition(gridPos);
         
@@ -100,8 +113,6 @@ function setupEventListeners(
             CombatTooltip.showEntityStats(hoveredEntity, event.clientX, event.clientY);
             
             // If we have a selected entity, also show combat preview
-            const selectedEntity = game.getSelectedEntity();
-            
             if (selectedEntity && selectedEntity !== hoveredEntity 
                 && selectedEntity.faction !== hoveredEntity.faction) {
                 
@@ -118,42 +129,35 @@ function setupEventListeners(
                     
                     if (odds) {
                         // Show combat odds in a tooltip
-                        setTimeout(() => {
-                            CombatTooltip.showCombatOdds(
-                                selectedEntity,
-                                hoveredEntity,
-                                odds,
-                                attackType,
-                                event.clientX,
-                                event.clientY + 10 // Offset to not overlap with entity tooltip
-                            );
-                        }, 300); // Small delay to avoid flickering
+                        CombatTooltip.showDetailedCombatOdds(
+                            selectedEntity, 
+                            hoveredEntity, 
+                            odds, 
+                            attackType, 
+                            event.clientX, 
+                            event.clientY + 30
+                        );
                     }
                 }
             }
         } else {
-            // Hide tooltip if not hovering over an entity
-            Tooltip.hide(100); // Delay to avoid flickering
+            // Hide tooltips when not hovering over an entity
+            CombatTooltip.hide();
         }
     });
     
-    // Mouse move out
-    canvas.addEventListener('mouseleave', () => {
-        // Hide tooltip when mouse leaves the canvas
-        Tooltip.hide();
-        gridRenderer.setHoveredTile(null);
-    });
-    
-    // Mouse click (select tile or entity)
+    // Mouse clicks (select, move, attack)
     canvas.addEventListener('click', (event) => {
+        console.log('[index] Canvas clicked');
         const rect = canvas.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         
         // Convert canvas coordinates to grid coordinates
         const gridPos = gridRenderer.canvasToGridCoordinates(x, y);
+        console.log(`[index] Click at grid position (${gridPos.x}, ${gridPos.y})`);
         
-        // Handle selection
+        // Use the UI Manager to handle the click
         uiManager.handleGridClick(gridPos);
     });
     

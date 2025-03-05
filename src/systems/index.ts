@@ -2,4 +2,5 @@
 export * from './EntityManager';
 export * from './ResourceManager';
 export * from './CombatSystem';
-export * from './FogOfWar'; 
+export * from './FogOfWar';
+export * from './Movement'; 

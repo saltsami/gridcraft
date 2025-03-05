@@ -41,6 +41,7 @@ export abstract class Entity {
     public abstract getType(): EntityType;
     
     public resetActionPoints(): void {
+      console.log(`[Entity] Resetting action points for ${this.getName()} from ${this.actionPoints} to ${this.maxActionPoints}`);
       this.actionPoints = this.maxActionPoints;
     }
     

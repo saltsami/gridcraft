@@ -39,9 +39,14 @@ export class EntityManager {
   }
   
   public resetActionPointsForFaction(faction: Faction): void {
-    this.entities
-      .filter(entity => entity.faction === faction)
-      .forEach(entity => entity.resetActionPoints());
+    console.log(`[EntityManager] Resetting action points for faction: ${faction}`);
+    const entities = this.entities.filter(entity => entity.faction === faction);
+    console.log(`[EntityManager] Found ${entities.length} entities to reset`);
+    
+    entities.forEach(entity => {
+      console.log(`[EntityManager] Resetting action points for ${entity.getName()}`);
+      entity.resetActionPoints();
+    });
   }
   
   public getNearestEntity(position: Position, faction: Faction): Entity | null {

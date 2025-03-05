@@ -3,6 +3,7 @@ import { Game } from '../core/Game';
 import { Position, TerrainType, Faction } from '../types';
 import { Entity } from '../entities';
 import { VisibilityState, FogOfWar } from '../systems';
+import { Movement, ReachableTile } from '../systems/Movement';
 
 export class GridRenderer {
     private game: Game;
@@ -48,6 +49,7 @@ export class GridRenderer {
         
         const grid = this.game.getGrid();
         const fogOfWar = this.game.getFogOfWar();
+        const movement = this.game.getMovement();
         
         // Calculate offset to center the grid
         const offsetX = (this.canvas.width - (grid.getWidth() * this.tileSize)) / 2;
@@ -67,6 +69,32 @@ export class GridRenderer {
                     this.renderTile(position, tile.terrainType, visibility);
                 }
             }
+        }
+        
+        // Render reachable tiles
+        if (movement && movement.getReachableTiles().length > 0) {
+            const reachableTiles = movement.getReachableTiles();
+            console.log(`[GridRenderer] Rendering ${reachableTiles.length} reachable tiles`);
+            
+            for (const tile of reachableTiles) {
+                // Don't render highlight for the entity's own position
+                const selectedEntity = this.game.getSelectedEntity();
+                if (selectedEntity && 
+                    selectedEntity.position.x === tile.position.x && 
+                    selectedEntity.position.y === tile.position.y) {
+                    continue;
+                }
+                
+                this.renderReachableTile(tile);
+            }
+        } else {
+            console.log('[GridRenderer] No reachable tiles to render');
+        }
+        
+        // Render path
+        if (movement && movement.getCurrentPath().length > 0) {
+            console.log(`[GridRenderer] Rendering path with ${movement.getCurrentPath().length} steps`);
+            this.renderPath(movement.getCurrentPath());
         }
         
         // Render entities
@@ -266,5 +294,64 @@ export class GridRenderer {
     
     public getTileSize(): number {
         return this.tileSize;
+    }
+    
+    /**
+     * Render a reachable tile with action point cost
+     */
+    private renderReachableTile(tile: ReachableTile): void {
+        const x = tile.position.x * this.tileSize;
+        const y = tile.position.y * this.tileSize;
+        
+        // Highlight reachable tile
+        this.ctx.fillStyle = 'rgba(0, 200, 100, 0.3)';
+        this.ctx.fillRect(x, y, this.tileSize, this.tileSize);
+        
+        // Draw movement cost
+        this.ctx.font = '10px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.textAlign = 'right';
+        this.ctx.textBaseline = 'bottom';
+        this.ctx.fillText(tile.cost.toFixed(1), x + this.tileSize - 2, y + this.tileSize - 2);
+    }
+    
+    /**
+     * Render the path from current position to target
+     */
+    private renderPath(path: Position[]): void {
+        if (path.length === 0) return;
+        
+        // Draw line connecting path points
+        this.ctx.beginPath();
+        
+        // Start from the first position in the path
+        const firstPos = path[0];
+        const startX = firstPos.x * this.tileSize + this.tileSize / 2;
+        const startY = firstPos.y * this.tileSize + this.tileSize / 2;
+        this.ctx.moveTo(startX, startY);
+        
+        // Connect to each point in the path
+        for (let i = 1; i < path.length; i++) {
+            const pos = path[i];
+            const x = pos.x * this.tileSize + this.tileSize / 2;
+            const y = pos.y * this.tileSize + this.tileSize / 2;
+            this.ctx.lineTo(x, y);
+        }
+        
+        // Style the path line
+        this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+        
+        // Highlight path tiles
+        for (const pos of path) {
+            this.ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+            this.ctx.fillRect(
+                pos.x * this.tileSize, 
+                pos.y * this.tileSize, 
+                this.tileSize, 
+                this.tileSize
+            );
+        }
     }
 } 

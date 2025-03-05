@@ -6,6 +6,7 @@ import { CombatSystem } from '../systems/CombatSystem';
 import { FogOfWar } from '../systems/FogOfWar';
 import { Entity, Hero, Zombie, Skeleton, Spider, Creeper } from '../entities';
 import { Position, Faction, EntityType, AttackType } from '../types';
+import { Movement } from '../systems/Movement';
 
 export class Game {
   private grid: Grid;
@@ -16,16 +17,17 @@ export class Game {
   private entityManager: EntityManager;
   private combatSystem: CombatSystem;
   private fogOfWar: FogOfWar;
+  private movement: Movement;
   private selectedEntity: Entity | null = null;
   
   constructor(width: number, height: number) {
     this.grid = new Grid(width, height);
-    this.resourceManager = new ResourceManager(this.grid);
     this.entityManager = new EntityManager();
+    this.resourceManager = new ResourceManager(this.grid);
     this.combatSystem = new CombatSystem();
     this.fogOfWar = new FogOfWar(width, height);
+    this.movement = new Movement(this.grid);
     
-    // Initialize the game
     this.initialize();
   }
   
@@ -55,8 +57,11 @@ export class Game {
   }
   
   public nextTurn(): void {
+    console.log(`[Game] Next turn called, current turn: ${this.turnCount}, playerTurn: ${this.playerTurn}`);
+    
     if (this.playerTurn) {
       // End player turn, begin enemy turn
+      console.log(`[Game] Ending player turn, starting enemy turn`);
       this.playerTurn = false;
       
       // Mark defeated entities as dead
@@ -66,8 +71,11 @@ export class Game {
       this.executeEnemyTurn();
     } else {
       // End enemy turn, begin player turn
+      console.log(`[Game] Ending enemy turn, starting player turn`);
       this.playerTurn = true;
       this.turnCount++;
+      
+      console.log(`[Game] New turn: ${this.turnCount}, day phase: ${this.dayPhase}`);
       
       // Remove dead entities that have been dead for 1 turn
       this.removeDeadEntities();
@@ -75,6 +83,7 @@ export class Game {
       // Check if day/night cycle should change
       if (this.turnCount % 10 === 0) {
         this.dayPhase = !this.dayPhase;
+        console.log(`[Game] Day/night cycle changed to: ${this.dayPhase ? 'Day' : 'Night'}`);
         
         // If transitioning to night, spawn enemies
         if (!this.dayPhase) {
@@ -83,10 +92,17 @@ export class Game {
       }
       
       // Reset action points for player entities
+      console.log(`[Game] Resetting action points for player entities`);
       this.entityManager.resetActionPointsForFaction(Faction.PLAYER);
       
       // Update fog of war
       this.updateFogOfWar();
+      
+      // If an entity is selected, refresh its movement options
+      if (this.selectedEntity) {
+        console.log(`[Game] Refreshing movement for selected entity: ${this.selectedEntity.getName()}`);
+        this.movement.setSelectedEntity(this.selectedEntity);
+      }
     }
   }
   
@@ -324,14 +340,27 @@ export class Game {
   }
   
   public moveEntity(entity: Entity, position: Position): boolean {
+    console.log(`[Game] Moving ${entity.getName()} from (${entity.position.x}, ${entity.position.y}) to (${position.x}, ${position.y})`);
+    console.log(`[Game] Entity has ${entity.actionPoints} action points`);
+    
+    // Use the movement system instead of direct position update
+    if (this.movement.isReachable(position)) {
+      console.log(`[Game] Position is reachable via movement system`);
+      return this.movement.moveEntityAlongPath(entity, position);
+    }
+    
+    console.log(`[Game] Position not reachable via movement system, falling back to basic movement`);
+    // Fall back to old movement if not using advanced movement
     // Check if move is valid
     if (!this.grid.isValidMove(entity, position)) {
+      console.log(`[Game] Move is invalid according to grid`);
       return false;
     }
     
     // Update entity position
     entity.position = position;
     entity.actionPoints--;
+    console.log(`[Game] Entity moved. Remaining AP: ${entity.actionPoints}`);
     
     // Update fog of war if player entity
     if (entity.faction === Faction.PLAYER) {
@@ -381,7 +410,9 @@ export class Game {
   }
   
   public setSelectedEntity(entity: Entity | null): void {
+    console.log(`[Game] Setting selected entity: ${entity ? entity.getName() : 'null'}`);
     this.selectedEntity = entity;
+    this.movement.setSelectedEntity(entity);
   }
   
   private markDeadEntities(): void {
@@ -413,5 +444,10 @@ export class Game {
       this.entityManager.removeEntity(entity);
       console.log(`${entity.getName()} has been removed from the game.`);
     }
+  }
+  
+  // Add getter for the movement system
+  public getMovement(): Movement {
+    return this.movement;
   }
 } 
