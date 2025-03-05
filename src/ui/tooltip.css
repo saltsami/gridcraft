@@ -1,0 +1,182 @@
+/* Tooltip Styles */
+.tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-size: 14px;
+    max-width: 320px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    transform-origin: top left;
+}
+
+.tooltip-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffcc00;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 4px;
+}
+
+.tooltip-section {
+    margin-bottom: 12px;
+}
+
+.tooltip-subheader {
+    font-size: 14px;
+    font-weight: bold;
+    color: #999;
+    margin: 5px 0;
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 4px 0;
+}
+
+.tooltip-label {
+    color: #999;
+}
+
+.tooltip-value {
+    color: #fff;
+    font-weight: bold;
+    margin-left: 12px;
+}
+
+.tooltip-value.positive {
+    color: #6be16b;
+}
+
+.tooltip-value.negative {
+    color: #e16b6b;
+}
+
+.tooltip-combat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #ccc;
+}
+
+.tooltip-attack-type {
+    color: #aaa;
+    font-style: italic;
+}
+
+.tooltip-breakdown {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.crit-marker {
+    color: #ff9900;
+}
+
+.hit-marker {
+    color: #7bff00;
+}
+
+.graze-marker {
+    color: #00aaff;
+}
+
+/* Probability Bar */
+.probability-bar-container {
+    margin: 8px 0 5px;
+}
+
+.probability-bar {
+    width: 100%;
+    height: 12px;
+    display: flex;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid #333;
+}
+
+.crit-segment {
+    background-color: #ff9900;
+    height: 100%;
+}
+
+.hit-segment {
+    background-color: #7bff00;
+    height: 100%;
+}
+
+.graze-segment {
+    background-color: #00aaff;
+    height: 100%;
+}
+
+.miss-segment {
+    background-color: #444;
+    height: 100%;
+}
+
+/* Tooltip Modifiers Section */
+.tooltip-modifiers {
+    font-size: 13px;
+    border-top: 1px solid #444;
+    padding-top: 8px;
+}
+
+/* Animation for tooltip appear/disappear */
+@keyframes tooltip-appear {
+    0% {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.tooltip-appear {
+    animation: tooltip-appear 0.2s ease-out forwards;
+}
+
+/* Hover-specific tooltip modifications */
+.entity-hover-tooltip {
+    border-left: 3px solid #ffcc00;
+}
+
+.combat-hover-tooltip {
+    border-left: 3px solid #ff5555;
+}
+
+/* Health bar in tooltip */
+.tooltip-health-bar {
+    width: 100%;
+    height: 6px;
+    background-color: #333;
+    border-radius: 3px;
+    margin-top: 2px;
+    overflow: hidden;
+}
+
+.tooltip-health-bar-fill {
+    height: 100%;
+    background-color: #00cc00;
+}
+
+.tooltip-health-bar-fill.warning {
+    background-color: #ffcc00;
+}
+
+.tooltip-health-bar-fill.danger {
+    background-color: #ff3333;
+} 

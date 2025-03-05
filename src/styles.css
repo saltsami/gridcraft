@@ -148,4 +148,307 @@
 
 .modal-buttons button {
     margin-left: 10px;
+}
+
+/* Tooltip Styles */
+.tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 14px;
+    max-width: 300px;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.tooltip-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffcc00;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 4px;
+}
+
+.tooltip-section {
+    margin-bottom: 10px;
+}
+
+.tooltip-subheader {
+    font-size: 14px;
+    font-weight: bold;
+    color: #999;
+    margin: 5px 0;
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 3px 0;
+}
+
+.tooltip-label {
+    color: #999;
+}
+
+.tooltip-value {
+    color: #fff;
+    font-weight: bold;
+}
+
+.tooltip-value.positive {
+    color: #6be16b;
+}
+
+.tooltip-value.negative {
+    color: #e16b6b;
+}
+
+.tooltip-combat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #ccc;
+}
+
+.tooltip-attack-type {
+    color: #aaa;
+    font-style: italic;
+}
+
+.tooltip-breakdown {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 3px;
+    font-size: 12px;
+}
+
+.crit-marker {
+    color: #ff9900;
+}
+
+.hit-marker {
+    color: #7bff00;
+}
+
+.graze-marker {
+    color: #00aaff;
+}
+
+/* Probability Bar */
+.probability-bar-container {
+    margin: 5px 0;
+}
+
+.probability-bar {
+    width: 100%;
+    height: 12px;
+    display: flex;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.crit-segment {
+    background-color: #ff9900;
+    height: 100%;
+}
+
+.hit-segment {
+    background-color: #7bff00;
+    height: 100%;
+}
+
+.graze-segment {
+    background-color: #00aaff;
+    height: 100%;
+}
+
+.miss-segment {
+    background-color: #444;
+    height: 100%;
+}
+
+/* Tooltip Modifiers Section */
+.tooltip-modifiers {
+    font-size: 13px;
+    border-top: 1px solid #444;
+    padding-top: 5px;
+}
+
+/* Combat Action UI */
+.combat-actions-panel {
+    position: absolute;
+    left: 10px;
+    bottom: 60px;
+    background-color: rgba(30, 30, 30, 0.8);
+    border: 2px solid #444;
+    border-radius: 5px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    color: white;
+    font-family: 'Minecraft', sans-serif;
+}
+
+.attack-button {
+    background-color: #b71c1c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin: 5px;
+}
+
+.attack-button:hover {
+    background-color: #f44336;
+}
+
+.attack-button:active {
+    background-color: #d32f2f;
+}
+
+/* Attack Result Message */
+.attack-result-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 5px;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 1000;
+    animation: message-appear 0.3s ease-out;
+}
+
+.attack-result-message.fade-out {
+    animation: message-fade-out 0.5s forwards;
+}
+
+@keyframes message-appear {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -30%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes message-fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* Entity selection and info styles */
+#selected-entity {
+    padding: 5px 10px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    background-color: rgba(30, 30, 30, 0.6);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    margin-top: 5px;
+}
+
+.entity-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 0.9em;
+}
+
+.mini-health-bar-container {
+    display: inline-block;
+    width: 60px;
+    height: 8px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    margin-left: 5px;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+.mini-health-bar {
+    height: 100%;
+    background-color: #4CAF50;
+    transition: width 0.3s ease;
+}
+
+.mini-health-bar.warning {
+    background-color: #FFC107;
+}
+
+.mini-health-bar.danger {
+    background-color: #F44336;
+}
+
+#action-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 90;
+}
+
+/* Death animation */
+@keyframes death-fade {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.2) rotate(5deg);
+    }
+    100% {
+        opacity: 0.3;
+        transform: scale(0.8) rotate(-5deg);
+    }
+}
+
+.entity-dead {
+    animation: death-fade 0.5s forwards;
+    opacity: 0.3;
+    filter: grayscale(100%);
+    pointer-events: none; /* Can't interact with dead entities */
+}
+
+/* Skull icon for dead entities */
+.death-marker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2em;
+    color: white;
+    text-shadow: 0 0 3px black, 0 0 5px red;
+    pointer-events: none;
+    z-index: 50;
 } 

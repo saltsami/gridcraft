@@ -1,6 +1,7 @@
-// types/index.ts - Re-export types for easier imports
+// src/types/index.ts - Barrel export file for type definitions
 export * from './Position';
-export * from './Faction';
+export * from './ResourceType';
 export * from './EntityType';
-export * from './TerrainType';
-export * from './ResourceType'; 
+export * from './AttackType';
+export * from './Faction';
+export * from './TerrainType'; 

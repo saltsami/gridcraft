@@ -188,6 +188,31 @@ export class GridRenderer {
         this.ctx.lineWidth = 1;
         this.ctx.stroke();
         
+        // Show death effect for dead entities
+        if (entity.isDead) {
+            // Draw death animation (X mark)
+            this.ctx.strokeStyle = 'white';
+            this.ctx.lineWidth = 2;
+            
+            // Draw X
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX - radius/2, centerY - radius/2);
+            this.ctx.lineTo(centerX + radius/2, centerY + radius/2);
+            this.ctx.moveTo(centerX + radius/2, centerY - radius/2);
+            this.ctx.lineTo(centerX - radius/2, centerY + radius/2);
+            this.ctx.stroke();
+            
+            // Add skull symbol
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = `${Math.floor(radius)}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('☠', centerX, centerY);
+            
+            // Draw faded entity
+            this.ctx.globalAlpha = 0.3;
+        }
+        
         // Draw health bar
         const healthBarWidth = this.tileSize * 0.8;
         const healthBarHeight = this.tileSize * 0.1;
@@ -198,10 +223,15 @@ export class GridRenderer {
         this.ctx.fillStyle = '#333';
         this.ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
         
-        // Health level
-        const healthPercentage = entity.health / entity.maxHealth;
-        this.ctx.fillStyle = healthPercentage > 0.5 ? '#00ff00' : healthPercentage > 0.25 ? '#ffff00' : '#ff0000';
-        this.ctx.fillRect(healthBarX, healthBarY, healthBarWidth * healthPercentage, healthBarHeight);
+        // Health level - don't show health bar for dead entities
+        if (!entity.isDead) {
+            const healthPercentage = entity.health / entity.maxHealth;
+            this.ctx.fillStyle = healthPercentage > 0.5 ? '#00ff00' : healthPercentage > 0.25 ? '#ffff00' : '#ff0000';
+            this.ctx.fillRect(healthBarX, healthBarY, healthBarWidth * healthPercentage, healthBarHeight);
+        }
+        
+        // Reset opacity
+        this.ctx.globalAlpha = 1.0;
     }
     
     private renderTileHighlight(position: Position, color: string): void {

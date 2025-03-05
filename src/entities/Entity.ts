@@ -11,6 +11,8 @@ export abstract class Entity {
     public actionPoints: number;
     public maxActionPoints: number;
     public isDefeated: boolean = false;
+    public isDead: boolean = false;
+    public deathTurn: number = -1;
     public sightRange: number = 5;
     
     // Combat stats
@@ -43,4 +45,18 @@ export abstract class Entity {
     }
     
     public abstract getName(): string;
+    
+    public takeDamage(amount: number): void {
+      this.health = Math.max(0, this.health - amount);
+      if (this.health === 0) {
+        this.isDefeated = true;
+      }
+    }
+    
+    public markAsDead(turnNumber: number): void {
+      if (this.health <= 0) {
+        this.isDead = true;
+        this.deathTurn = turnNumber;
+      }
+    }
 }

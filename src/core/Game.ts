@@ -1,8 +1,11 @@
 // core/Game.ts - Main game controller
 import { Grid } from './Grid';
-import { ResourceManager, EntityManager, CombatSystem, FogOfWar } from '../systems';
+import { ResourceManager } from '../systems/ResourceManager';
+import { EntityManager } from '../systems/EntityManager';
+import { CombatSystem } from '../systems/CombatSystem';
+import { FogOfWar } from '../systems/FogOfWar';
 import { Entity, Hero, Zombie, Skeleton, Spider, Creeper } from '../entities';
-import { Position, Faction, EntityType } from '../types';
+import { Position, Faction, EntityType, AttackType } from '../types';
 
 export class Game {
   private grid: Grid;
@@ -55,11 +58,19 @@ export class Game {
     if (this.playerTurn) {
       // End player turn, begin enemy turn
       this.playerTurn = false;
+      
+      // Mark defeated entities as dead
+      this.markDeadEntities();
+      
+      // Execute enemy actions
       this.executeEnemyTurn();
     } else {
       // End enemy turn, begin player turn
       this.playerTurn = true;
       this.turnCount++;
+      
+      // Remove dead entities that have been dead for 1 turn
+      this.removeDeadEntities();
       
       // Check if day/night cycle should change
       if (this.turnCount % 10 === 0) {
@@ -92,8 +103,8 @@ export class Game {
   }
   
   private processEnemyAction(enemy: Entity): void {
-    // Skip if the enemy has no action points
-    if (enemy.actionPoints <= 0) {
+    // Skip if the enemy has dead or has no action points
+    if (enemy.isDead || enemy.actionPoints <= 0) {
       return;
     }
     
@@ -110,31 +121,129 @@ export class Game {
     const dy = nearestPlayer.position.y - enemy.position.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
+    // Special handling for Creepers - they are more aggressive
+    if (enemy.getType() === EntityType.CREEPER) {
+      // Creepers will always try to get close to the player
+      // If within special attack range, they'll use their explosive attack
+      if (distance <= enemy.specialAttackRange) {
+        // Use special attack
+        const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.SPECIAL, this.grid);
+        
+        if (attackResult.hit) {
+          console.log(`${enemy.getName()} explodes near ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
+        } else {
+          console.log(`${enemy.getName()} tried to explode but somehow missed.`);
+        }
+        
+        // Creeper uses all action points for special attack
+        enemy.actionPoints = 0;
+        return;
+      } 
+      // If within melee range, use melee attack
+      else if (distance <= 1) {
+        const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.MELEE, this.grid);
+        
+        if (attackResult.hit) {
+          console.log(`${enemy.getName()} attacks ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
+        } else {
+          console.log(`${enemy.getName()} missed ${nearestPlayer.getName()}`);
+        }
+        
+        // Use an action point
+        enemy.actionPoints--;
+      }
+      
+      // Creepers will use all remaining action points to move toward the player
+      while (enemy.actionPoints > 0) {
+        // Calculate move direction toward player
+        const moveX = dx !== 0 ? (dx > 0 ? 1 : -1) : 0;
+        const moveY = dy !== 0 ? (dy > 0 ? 1 : -1) : 0;
+        
+        const newPosition = {
+          x: enemy.position.x + moveX,
+          y: enemy.position.y + moveY
+        };
+        
+        // Try to move to the new position
+        const moved = this.moveEntity(enemy, newPosition);
+        if (moved) {
+          console.log(`${enemy.getName()} aggressively moved toward ${nearestPlayer.getName()}`);
+          enemy.actionPoints--;
+        } else {
+          // If we can't move directly toward the player, try alternative paths
+          const alternativeMoves = [
+            { x: enemy.position.x + moveX, y: enemy.position.y },
+            { x: enemy.position.x, y: enemy.position.y + moveY },
+            { x: enemy.position.x + (moveX !== 0 ? 0 : 1), y: enemy.position.y + (moveY !== 0 ? 0 : 1) },
+            { x: enemy.position.x + (moveX !== 0 ? 0 : -1), y: enemy.position.y + (moveY !== 0 ? 0 : -1) }
+          ];
+          
+          let foundAlternative = false;
+          for (const altMove of alternativeMoves) {
+            if (this.moveEntity(enemy, altMove)) {
+              console.log(`${enemy.getName()} found path around obstacle toward ${nearestPlayer.getName()}`);
+              enemy.actionPoints--;
+              foundAlternative = true;
+              break;
+            }
+          }
+          
+          if (!foundAlternative) {
+            // If we can't move at all, just end turn
+            enemy.actionPoints = 0;
+          }
+        }
+      }
+      return; // End processing for Creeper
+    }
+    
+    // Regular enemy AI for other enemy types
     // Check if we can attack
     let canAttack = false;
     
     // If we have a melee attack and are adjacent to the player
     if (enemy.meleeAttackPower > 0 && distance <= 1) {
       canAttack = true;
-      // Attack logic would go here
-      console.log(`${enemy.getName()} attacks ${nearestPlayer.getName()} in melee`);
-      // Simulate attack by using an action point
+      // Attack the player
+      const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.MELEE, this.grid);
+      
+      if (attackResult.hit) {
+        console.log(`${enemy.getName()} attacks ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
+      } else {
+        console.log(`${enemy.getName()} missed ${nearestPlayer.getName()}`);
+      }
+      
+      // Use an action point
       enemy.actionPoints--;
     } 
     // If we have a ranged attack and are within range
     else if (enemy.rangedAttackPower > 0 && distance <= enemy.rangedAttackRange) {
       canAttack = true;
-      // Attack logic would go here
-      console.log(`${enemy.getName()} attacks ${nearestPlayer.getName()} at range`);
-      // Simulate attack by using an action point
+      // Attack the player
+      const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.RANGED, this.grid);
+      
+      if (attackResult.hit) {
+        console.log(`${enemy.getName()} shoots ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
+      } else {
+        console.log(`${enemy.getName()} shot at ${nearestPlayer.getName()} but missed`);
+      }
+      
+      // Use an action point
       enemy.actionPoints--;
     }
     // If we have a special attack and are within range
     else if (enemy.specialAttackPower > 0 && distance <= enemy.specialAttackRange) {
       canAttack = true;
-      // Attack logic would go here
-      console.log(`${enemy.getName()} uses special attack on ${nearestPlayer.getName()}`);
-      // Simulate attack by using all action points
+      // Use special attack
+      const attackResult = this.combatSystem.resolveAttack(enemy, nearestPlayer, AttackType.SPECIAL, this.grid);
+      
+      if (attackResult.hit) {
+        console.log(`${enemy.getName()} uses special attack on ${nearestPlayer.getName()} for ${attackResult.damage} damage!`);
+      } else {
+        console.log(`${enemy.getName()}'s special attack missed ${nearestPlayer.getName()}`);
+      }
+      
+      // Use all action points
       enemy.actionPoints = 0;
     }
     
@@ -153,6 +262,7 @@ export class Game {
       const moved = this.moveEntity(enemy, newPosition);
       if (moved) {
         console.log(`${enemy.getName()} moved toward ${nearestPlayer.getName()}`);
+        enemy.actionPoints--;
       }
     }
   }
@@ -232,8 +342,11 @@ export class Game {
   }
   
   public getSelectedEntity(): Entity | null {
-    // Implementation would depend on selection system
-    return null;
+    return this.selectedEntity;
+  }
+  
+  public getPlayerFaction(): Faction {
+    return Faction.PLAYER;
   }
   
   // Added getter for turnCount
@@ -265,5 +378,40 @@ export class Game {
   
   public getFogOfWar(): FogOfWar {
     return this.fogOfWar;
+  }
+  
+  public setSelectedEntity(entity: Entity | null): void {
+    this.selectedEntity = entity;
+  }
+  
+  private markDeadEntities(): void {
+    // Get all entities that are defeated but not yet marked as dead
+    const entities = this.entityManager.getAllEntities();
+    
+    for (const entity of entities) {
+      if (entity.isDefeated && !entity.isDead) {
+        entity.markAsDead(this.turnCount);
+        console.log(`${entity.getName()} has been defeated!`);
+      }
+    }
+  }
+  
+  private removeDeadEntities(): void {
+    // Get all dead entities
+    const entities = this.entityManager.getAllEntities();
+    const toRemove: Entity[] = [];
+    
+    for (const entity of entities) {
+      if (entity.isDead && entity.deathTurn < this.turnCount) {
+        // This entity has been dead for at least 1 turn, remove it
+        toRemove.push(entity);
+      }
+    }
+    
+    // Remove the entities
+    for (const entity of toRemove) {
+      this.entityManager.removeEntity(entity);
+      console.log(`${entity.getName()} has been removed from the game.`);
+    }
   }
 } 

@@ -1,4 +1,4 @@
-// src/entities/index.ts - Re-export entities for easier imports
+// src/entities/index.ts - Barrel export file for entities
 export * from './Entity';
 export * from './Hero';
 export * from './Zombie';

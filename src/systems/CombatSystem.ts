@@ -48,13 +48,9 @@ export class CombatSystem {
     let damage = 0;
     if (hit) {
       damage = this.calculateDamage(attacker, target, attackType);
-      target.health -= damage;
       
-      // Check if target is defeated
-      if (target.health <= 0) {
-        target.health = 0;
-        target.isDefeated = true;
-      }
+      // Use the takeDamage method instead of directly modifying health
+      target.takeDamage(damage);
     }
     
     // Deduct action points

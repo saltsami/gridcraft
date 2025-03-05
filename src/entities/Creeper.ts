@@ -11,21 +11,21 @@ export class Creeper extends Entity {
         // Set creeper-specific properties
         this.maxHealth = 40;
         this.health = 40;
-        this.maxActionPoints = 2;
-        this.actionPoints = 2;
-        this.sightRange = 6;
+        this.maxActionPoints = 3;
+        this.actionPoints = 3;
+        this.sightRange = 8;
         
         // Combat stats
         this.accuracy = 8;
         this.evasion = 4;
         this.armor = 0;
-        this.meleeAttackPower = 0; // No melee attack
-        this.rangedAttackPower = 0; // No ranged attack
+        this.meleeAttackPower = 15;
+        this.rangedAttackPower = 0;
         
         // Creeper has an explosive special attack
-        this.specialAttackPower = 25; // High damage
-        this.specialAttackRange = 2; // Area of effect
-        this.specialAttackAccuracy = 100; // Always hits
+        this.specialAttackPower = 25;
+        this.specialAttackRange = 2;
+        this.specialAttackAccuracy = 100;
     }
     
     public getType(): EntityType {

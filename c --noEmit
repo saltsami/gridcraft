@@ -1,0 +1,14 @@
+[33mcommit cd075fa0c06d7656efa3f7b7d55c4a2e563c54af[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m)[m
+Author: saltsami <113829603+saltsami@users.noreply.github.com>
+Date:   Wed Mar 5 11:30:07 2025 +0200
+
+    Added enemy mob entities and AI: Implemented Zombie, Skeleton, Spider, and Creeper classes with unique stats and behaviors. Added basic enemy AI for movement and attacks. Updated CHANGELOG.md to reflect changes.
+
+CHANGELOG.md
+src/core/Game.ts
+src/core/Grid.ts
+src/entities/Creeper.ts
+src/entities/Skeleton.ts
+src/entities/Spider.ts
+src/entities/Zombie.ts
+src/entities/index.ts
